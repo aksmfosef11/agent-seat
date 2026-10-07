@@ -4,17 +4,36 @@
 
 The preview installer targets Windows 11 Pro/Enterprise/Education x64. It does not provide automatic installation for Home, ARM64 or Windows Server/RDS. Use administrator access under the currently logged-in owner's account. The release ZIP includes the .NET runtime. Installation messages and original diagnostics are in English.
 
-## First installation
+## Guided installation
 
-1. Download the executable ZIP and SHA256SUMS.txt from [Releases](https://github.com/aksmfosef11/agent-seat/releases). Compare `Get-FileHash .\agent-seat-0.8.0-win-x64.zip -Algorithm SHA256` with the checksum, then extract it to `C:\agent-seat` or another folder.
-2. Open 64-bit Administrator Windows PowerShell, enter that folder and run `.\Install.ps1` to review the plan.
-3. Review the unsupported TermWrap modification for simultaneous Windows client sessions, then run `.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch`.
-4. The installer creates a separate service, standard account `agent-seat-user`, hidden local RDP anchor task, approval list and token. The generated password is passed through stdin and stored with DPAPI, never displayed or placed in command arguments.
-5. Double-click `View-Seat.cmd`, or run `& "$env:ProgramFiles\agent-seat\cli\agent-seat.exe" computer view --seat agent` as the ordinary installing owner.
+Download [Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd) and double-click it, or use one command in 64-bit Windows PowerShell:
 
-If downloaded scripts are blocked, verify the download before using `Unblock-File .\Install.ps1` and `Get-ChildItem .\scripts\*.ps1 | Unblock-File`. Use a process-only execution policy if necessary; preserve machine and organization policies.
+```powershell
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
+```
 
-An active TermWrap dependency is reused without replacing it or restarting Terminal Services. Use a separate Windows account for each seat.
+The download is pinned to 0.9.0. The bootstrap validates the ZIP's size, SHA-256 checksum and GitHub digest; checks every archive path; verifies the extracted manifest; then starts setup. Review the plan, type INSTALL to accept the unsupported TermWrap change and approve UAC using the same interactive owner account. After installation the normal owner process opens the viewer read-only. Administrator access under a different Windows account is refused before installation.
+
+The guided setup messages follow Windows' UI language (English, Korean or Simplified Chinese). Use `-Language en`, `ko` or `zh` to select one. Detailed backend diagnostics stay in English. Windows security prompts are handled by the user. These preview scripts are not code-signed; review the source and download origin before running them. The launcher uses a process-only execution policy and does not change machine or organization policy.
+
+Download without installing or requesting administrator access:
+
+```powershell
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1'))) -DownloadOnly
+```
+
+The verified ZIP and extracted files are retained under `%LOCALAPPDATA%\agent-seat\Downloads\<unique folder>`. For a downloaded ZIP, run `Setup-Seat.ps1 -Plan` to review without host changes, or `Setup-Seat.ps1 -NoOpen` to install without opening the viewer. When a seat is already configured, setup keeps it and can open its viewer. It does not upgrade existing service files. A stopped or partially installed service is left for diagnosis rather than replaced.
+
+For a completely offline installation, download the ZIP and SHA256SUMS.txt, compare `Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256`, extract and double-click its Install-AgentSeat.cmd. No bootstrap download is needed. If verified downloaded scripts are blocked, use `Unblock-File` on those files only; preserve organization policy.
+
+The low-level installer remains available in Administrator PowerShell for automation:
+
+```powershell
+.\Install.ps1
+.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch
+```
+
+It creates the dedicated service, standard account, local RDP anchor, approval list and protected token. The generated password is passed through stdin and stored with DPAPI, never displayed or placed in command arguments. An active TermWrap dependency is reused without replacing it or restarting Terminal Services. Each seat requires its own Windows account.
 
 ## Viewer and language
 

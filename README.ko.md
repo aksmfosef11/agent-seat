@@ -23,7 +23,7 @@ AI에게 앱을 열고, 화면을 읽고, 데스크톱 작업을 수행할 공�
 
 기존 AI 에이전트에 Windows 작업 공간을 연결하거나, 앱 자동화를 실험하거나, AI 화면을 계속 앞에 띄워 두지 않고 작업을 감독할 때 사용할 수 있습니다. 이 프로젝트는 좌석과 조작 도구를 제공합니다. 이미지를 읽고 도구를 호출할 AI 에이전트나 모델 클라이언트는 사용자가 연결합니다.
 
-> **0.8.0 시험판입니다.** Windows 클라이언트의 동시 세션을 위해 비공식 TermWrap 수정을 사용합니다. Windows 업데이트로 호환성이 바뀔 수 있습니다. 다양한 Windows 빌드의 새 PC 설치와 재부팅·재로그인 검증은 남아 있습니다. 설치 전 [검증 기록](docs/VALIDATION.md)을 확인하세요.
+> **0.9.0 시험판입니다.** Windows 클라이언트의 동시 세션을 위해 비공식 TermWrap 수정을 사용합니다. Windows 업데이트로 호환성이 바뀔 수 있습니다. 다양한 Windows 빌드의 새 PC 설치와 재부팅·재로그인 검증은 남아 있습니다. 설치 전 [검증 기록](docs/VALIDATION.md)을 확인하세요.
 
 ## 주요 기능
 
@@ -37,7 +37,7 @@ AI에게 앱을 열고, 화면을 읽고, 데스크톱 작업을 수행할 공�
 | ⏸️ 소유자 제어 | 로컬 대시보드에서 일시정지·재개·입력 중지 |
 | 🌐 세 언어 | 한국어·영어·중국어 간체, 선택한 언어 저장 |
 
-배포 ZIP에는 서비스, CLI, RDP 앵커, 입력 도우미와 .NET 런타임이 들어 있습니다. Sunshine, Moonlight, Steam 실행기, 게임패드 드라이버는 포함하지 않습니다.
+배포 ZIP에는 서비스, CLI, RDP 앵커, 입력 도우미와 .NET 런타임이 들어 있습니다.
 
 ## 동작 구조
 
@@ -55,37 +55,35 @@ flowchart LR
 
 ## 빠른 시작
 
-### 1. 다운로드와 확인
+### 더블 클릭 설치
 
-[Releases](https://github.com/aksmfosef11/agent-seat/releases)에서 **`agent-seat-0.8.0-win-x64.zip`**과 **`SHA256SUMS.txt`**를 받습니다. 아래 결과를 체크섬 파일과 비교한 뒤 `C:\agent-seat` 같은 폴더에 압축을 풉니다.
+[Install-AgentSeat.cmd 다운로드](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd) 후 더블 클릭하세요. 실행 파일 ZIP 다운로드, SHA-256 체크섬과 GitHub 파일 해시 확인, 압축 해제, 설치 시작까지 자동으로 진행합니다. 직접 압축을 풀거나 개발 도구를 설치할 필요가 없습니다.
 
-```powershell
-Get-FileHash .\agent-seat-0.8.0-win-x64.zip -Algorithm SHA256
-```
+설치 계획을 확인하고 **INSTALL**을 입력해 비공식 Windows 클라이언트 수정에 동의한 뒤, 같은 Windows 소유자 계정으로 관리자 승인창을 확인하세요. 설치가 끝나면 좌석 화면이 읽기 전용으로 열립니다.
 
-실행 파일이 포함된 릴리스 ZIP을 사용하세요. GitHub가 자동 생성하는 소스 코드 압축 파일에는 실행 파일이 없습니다. 일반 사용자는 Visual Studio, Node.js, Git, .NET SDK를 설치할 필요가 없습니다.
+### PowerShell 한 줄 설치
 
-### 2. 좌석 설치
-
-**64비트 Windows PowerShell을 관리자 권한으로** 열고, 변경 계획을 확인한 뒤 적용합니다.
+일반 소유자 계정에서 **64비트 Windows PowerShell**을 열고 실행하세요.
 
 ```powershell
-cd C:\agent-seat
-.\Install.ps1
-.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
 ```
 
-마지막 플래그는 비공식 Windows 클라이언트 수정을 명시적으로 확인하는 옵션입니다. 다운로드된 스크립트가 차단되면 검증한 파일에 한해 [설치·복구 안내](docs/INSTALL.md)에 따라 차단을 해제하세요.
+이 명령은 이 저장소의 버전이 지정된 [설치 시작 스크립트](Get-AgentSeat.ps1)를 내려받아 실행합니다. 같은 설치 계획과 관리자 승인 과정이 이어집니다. 설치 파일을 실행하기 전에 ZIP을 검증합니다.
 
-### 3. 화면 열기
+### ZIP으로 오프라인 설치
 
-**`View-Seat.cmd`를 더블 클릭**하거나 일반 Windows 계정에서 다음을 실행합니다.
+[Releases](https://github.com/aksmfosef11/agent-seat/releases)에서 **`agent-seat-0.9.0-win-x64.zip`**과 **`SHA256SUMS.txt`**를 받아 해시를 비교합니다. ZIP 압축을 풀고 안의 **`Install-AgentSeat.cmd`**를 더블 클릭하면 추가 다운로드 없이 설치합니다.
 
 ```powershell
-& "$env:ProgramFiles\agent-seat\cli\agent-seat.exe" computer view --seat agent
+Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256
 ```
 
-읽기 전용으로 열립니다. AI 작업을 멈춘 뒤 **직접 조작**을 켜세요. 한글·중국어 등 IME 입력은 텍스트 입력칸을, 브라우저가 먼저 처리하는 키 조합은 단축키 버튼을 사용하세요. 보이는 화면은 약 600ms마다 갱신됩니다.
+GitHub가 자동 생성하는 소스 코드 압축 파일에는 실행 파일이 없습니다. 일반 사용자는 Visual Studio, Node.js, Git, .NET SDK를 설치할 필요가 없습니다.
+
+이미 설치된 좌석에서는 계정을 다시 만들거나 비밀번호를 바꾸지 않고 화면을 엽니다. 기존 실행 파일을 업데이트하는 기능은 없습니다. 옵션, 다운로드만 하기, 중간 실패 복구는 [설치 안내](docs/INSTALL.md)를 참고하세요.
+
+설치 후에는 **`View-Seat.cmd`**로 화면을 다시 열 수 있습니다. AI 작업을 멈춘 뒤 **직접 조작**을 켜세요. IME 입력은 텍스트 입력칸을, 브라우저가 먼저 처리하는 키 조합은 단축키 버튼을 사용하세요.
 
 ## 지원 환경
 
@@ -136,6 +134,7 @@ cd agent-seat
 .\scripts\Build-TermWrap.ps1
 dotnet test .\AgentSeat.sln -c Release
 npm test
+powershell -NoProfile -File tests/installer/bootstrap.tests.ps1
 .\scripts\Package-Release.ps1
 ```
 
@@ -156,4 +155,4 @@ npm test
 
 ## 라이선스
 
-프로젝트 소스는 [MIT](LICENSE)입니다. 의존성은 원래 라이선스를 유지합니다. [서드파티 고지](THIRD_PARTY_NOTICES.md)를 확인하세요. 비공개 Duo 바이너리와 Windows 시스템 DLL은 포함하지 않습니다.
+프로젝트 소스는 [MIT](LICENSE)입니다. 의존성은 원래 라이선스를 유지합니다. [서드파티 고지](THIRD_PARTY_NOTICES.md)를 확인하세요.

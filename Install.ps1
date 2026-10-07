@@ -17,9 +17,11 @@ $termWrap = Join-Path $PSScriptRoot 'artifacts\termwrap\TermWrap.dll'
 $apiRoot = 'http://127.0.0.1:38399/api/v1'
 $taskName = "agent-seat RDP Anchor - $SeatId"
 $owner = [Security.Principal.WindowsIdentity]::GetCurrent().Name
-$edition = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').EditionID
+$windowsVersion = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+$edition = $windowsVersion.EditionID
 if (-not [Environment]::Is64BitOperatingSystem -or $env:PROCESSOR_ARCHITECTURE -ne 'AMD64') { throw 'Use 64-bit PowerShell on Windows x64.' }
 if ($edition -notmatch '^(Professional|Enterprise|Education)') { throw "This installer targets Windows Pro/Enterprise/Education x64, not '$edition'." }
+if ([int]$windowsVersion.CurrentBuildNumber -lt 22000 -or (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE -ne 'AMD64') { throw 'This installer requires Windows 11 on an x64 host.' }
 foreach ($required in @('service\AgentSeat.exe', 'service\rdp-anchor\AgentSeat.RdpAnchor.exe', 'service\agent-helper\AgentSeat.AgentHelper.exe', 'cli\agent-seat.exe')) {
     if (-not (Test-Path -LiteralPath (Join-Path $published $required))) { throw "Missing $required. Download the release ZIP, or build with scripts\Package-Release.ps1." }
 }
@@ -41,8 +43,8 @@ $sharedRdp = [IO.Path]::GetFileName([Environment]::ExpandEnvironmentVariables([s
 Write-Host 'agent-seat installation plan'
 Write-Host "  Service: $serviceName; app/CLI: $installRoot; data: $dataRoot"
 Write-Host "  UI/API: http://127.0.0.1:38399; account: $UserName; seat: $SeatId; display: ${Width}x${Height}"
-Write-Host "  Existing SeatStream: $([bool]$legacy); existing TermWrap: $sharedRdp (reused without restarting TermService)"
-Write-Host '  Sunshine, gaming devices and existing SeatStream settings are not installed or updated.'
+Write-Host "  Existing TermWrap: $sharedRdp (reused without restarting TermService)"
+Write-Host '  Creates a dedicated Windows account and local service for AI desktop control.'
 if (-not $Apply) { Write-Host 'Dry run. Add -Apply -IAcceptUnsupportedWindowsClientPatch to install.'; return }
 if (-not $IAcceptUnsupportedWindowsClientPatch) { throw 'Explicit -IAcceptUnsupportedWindowsClientPatch is required.' }
 $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -58,7 +60,7 @@ if ($service) {
     if (Get-NetTCPConnection -State Listen -LocalPort 38399 -ErrorAction SilentlyContinue) { throw 'Port 38399 is already in use.' }
 }
 if (-not $sharedRdp) {
-    if ($legacy) { throw 'SeatStream is installed without recognizable TermWrap. Refusing to change the shared RDP service; review it manually.' }
+    if ($legacy) { throw 'An existing desktop service has an unrecognized RDP configuration. Refusing to change shared RDP; review it manually.' }
     & (Join-Path $PSScriptRoot 'scripts\Install-MultiSession.ps1') -TermWrapPath $termWrap -Apply -IAcceptUnsupportedWindowsClientPatch
 }
 if (-not $service) {

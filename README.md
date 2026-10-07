@@ -23,7 +23,7 @@ Your agent needs a place to open apps, read screens and carry out desktop tasks.
 
 Use it to give an existing AI agent a desktop workspace, explore Windows app automation, or supervise a task without keeping the AI's screen in the foreground. The project provides the desktop and control tools; bring your own image-capable agent or model client.
 
-> **Experimental preview · 0.8.0.** The installer uses an unsupported TermWrap modification to enable simultaneous sessions on Windows clients. Windows updates can affect compatibility. Fresh-machine installation across Windows builds and restart/re-login are still unvalidated. Review the [validation record](docs/VALIDATION.md) before installing.
+> **Experimental preview · 0.9.0.** The installer uses an unsupported TermWrap modification to enable simultaneous sessions on Windows clients. Windows updates can affect compatibility. Fresh-machine installation across Windows builds and restart/re-login are still unvalidated. Review the [validation record](docs/VALIDATION.md) before installing.
 
 ## What you can do
 
@@ -37,7 +37,7 @@ Use it to give an existing AI agent a desktop workspace, explore Windows app aut
 | ⏸️ Owner controls | Pause, resume and stop input from the local dashboard |
 | 🌐 Three UI languages | English, Korean and Simplified Chinese with a saved language choice |
 
-The release includes the service, CLI, RDP anchor, input helper and .NET runtime. Sunshine, Moonlight, Steam launchers and gamepad drivers are excluded.
+The release includes the service, CLI, RDP anchor, input helper and .NET runtime.
 
 ## How it fits together
 
@@ -55,37 +55,35 @@ flowchart LR
 
 ## Quick start
 
-### 1. Download and verify
+### Double-click installation
 
-Get **`agent-seat-0.8.0-win-x64.zip`** and **`SHA256SUMS.txt`** from [Releases](https://github.com/aksmfosef11/agent-seat/releases). Compare the ZIP's hash with the checksum file, then extract it to a folder such as `C:\agent-seat`.
+[Download Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd) and double-click it. It downloads the executable release ZIP, verifies its SHA-256 checksum and GitHub asset digest, extracts it and starts setup. No manual extraction or developer tools are needed.
 
-```powershell
-Get-FileHash .\agent-seat-0.8.0-win-x64.zip -Algorithm SHA256
-```
+Review the installation plan, type **INSTALL** to accept the unsupported Windows client modification, then approve Windows administrator access using the same owner account. Setup creates the seat and opens its screen read-only.
 
-Use the executable release ZIP. GitHub's automatic source archives are for developers and do not contain built applications. End users do not need Visual Studio, Node.js, Git or a .NET SDK.
+### One PowerShell command
 
-### 2. Install a seat
-
-Open **64-bit Windows PowerShell as Administrator**, then review the plan and apply it:
+Open **64-bit Windows PowerShell** under your ordinary installing owner account and run:
 
 ```powershell
-cd C:\agent-seat
-.\Install.ps1
-.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
 ```
 
-The explicit flag acknowledges the unsupported Windows client modification. If downloaded scripts are blocked, unblock the verified files as described in [installation and recovery](docs/en/INSTALL.md).
+This downloads and executes the versioned [bootstrap script](Get-AgentSeat.ps1) from this repository. The same installation review and Windows administrator prompt follow. The bootstrap checks the ZIP before running its installer.
 
-### 3. Open its screen
+### Offline ZIP installation
 
-Double-click **`View-Seat.cmd`**, or run this from your ordinary Windows account:
+Download **`agent-seat-0.9.0-win-x64.zip`** and **`SHA256SUMS.txt`** from [Releases](https://github.com/aksmfosef11/agent-seat/releases), compare the hash, then extract the ZIP and double-click its **`Install-AgentSeat.cmd`**. This path uses the local package without another download.
 
 ```powershell
-& "$env:ProgramFiles\agent-seat\cli\agent-seat.exe" computer view --seat agent
+Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256
 ```
 
-The viewer opens read-only. Stop the AI task, then enable **Manual control** to take over. Use the text box for Chinese, Korean or other IME text; use the shortcut buttons when the browser intercepts a key combination. The visible screen refreshes about every 600 ms.
+GitHub's automatic source archives do not contain built applications. End users do not need Visual Studio, Node.js, Git or a .NET SDK.
+
+Setup reuses an existing seat and opens its viewer; it does not reset accounts or upgrade existing application binaries. See [installation and recovery](docs/en/INSTALL.md) for options, download-only mode and interrupted installations.
+
+After setup, **`View-Seat.cmd`** opens the screen again. Stop the AI task before enabling **Manual control**. Use the text box for IME text and the shortcut buttons for combinations intercepted by the browser.
 
 ## Requirements
 
@@ -136,6 +134,7 @@ cd agent-seat
 .\scripts\Build-TermWrap.ps1
 dotnet test .\AgentSeat.sln -c Release
 npm test
+powershell -NoProfile -File tests/installer/bootstrap.tests.ps1
 .\scripts\Package-Release.ps1
 ```
 
@@ -156,4 +155,4 @@ Reports with a Windows edition/build and clear reproduction steps help most. Rem
 
 ## License
 
-[MIT](LICENSE) for this project's source. Dependencies retain their original licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). No proprietary Duo binaries or Windows system DLLs are bundled.
+[MIT](LICENSE) for this project's source. Dependencies retain their original licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).

@@ -23,7 +23,7 @@ AI 需要一个打开应用、读取屏幕并执行桌面任务的工作空间�
 
 你可以为现有 AI 代理提供 Windows 工作空间、探索应用自动化，或在不持续显示 AI 屏幕的情况下监督任务。本项目提供桌面和操作工具；能够读取图像并调用工具的代理或模型客户端由你自行连接。
 
-> **0.8.0 实验预览版。** 安装器使用非官方 TermWrap 修改来启用 Windows 客户端的并发会话。Windows 更新可能影响兼容性。不同 Windows 版本的新机器安装、重启及重新登录仍未完成验证。安装前请查看[验证记录](docs/VALIDATION.md)。
+> **0.9.0 实验预览版。** 安装器使用非官方 TermWrap 修改来启用 Windows 客户端的并发会话。Windows 更新可能影响兼容性。不同 Windows 版本的新机器安装、重启及重新登录仍未完成验证。安装前请查看[验证记录](docs/VALIDATION.md)。
 
 ## 主要功能
 
@@ -37,7 +37,7 @@ AI 需要一个打开应用、读取屏幕并执行桌面任务的工作空间�
 | ⏸️ 所有者控制 | 在本地仪表板暂停、恢复或停止输入 |
 | 🌐 三种界面语言 | 英语、韩语、简体中文，记住所选语言 |
 
-发行 ZIP 包含服务、CLI、RDP 锚点、输入助手及 .NET 运行时。不包含 Sunshine、Moonlight、Steam 启动器或游戏手柄驱动。
+发行 ZIP 包含服务、CLI、RDP 锚点、输入助手及 .NET 运行时。
 
 ## 工作方式
 
@@ -55,37 +55,35 @@ flowchart LR
 
 ## 快速开始
 
-### 1. 下载并验证
+### 双击安装
 
-从 [Releases](https://github.com/aksmfosef11/agent-seat/releases) 下载 **`agent-seat-0.8.0-win-x64.zip`** 和 **`SHA256SUMS.txt`**。将以下结果与校验和文件对比，再解压到 `C:\agent-seat` 等目录。
+[下载 Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd)，然后双击。它会下载可执行 ZIP，验证 SHA-256 校验和与 GitHub 文件摘要，解压并启动安装。无需手动解压或安装开发工具。
 
-```powershell
-Get-FileHash .\agent-seat-0.8.0-win-x64.zip -Algorithm SHA256
-```
+查看安装计划，输入 **INSTALL** 接受非官方 Windows 客户端修改，然后使用同一 Windows 所有者账户确认管理员授权。安装完成后，席位查看器会以只读模式打开。
 
-请使用包含可执行文件的发行 ZIP。GitHub 自动生成的源码压缩包不含已构建的程序。普通用户无需安装 Visual Studio、Node.js、Git 或 .NET SDK。
+### 一条 PowerShell 命令
 
-### 2. 安装席位
-
-以**管理员身份打开 64 位 Windows PowerShell**，查看计划后应用：
+使用普通所有者账户打开 **64 位 Windows PowerShell**，运行：
 
 ```powershell
-cd C:\agent-seat
-.\Install.ps1
-.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
 ```
 
-最后一个参数明确确认使用非官方 Windows 客户端修改。如下载的脚本被阻止，请验证文件后按照[安装与恢复说明](docs/zh-CN/INSTALL.md)解除阻止。
+此命令下载并执行本仓库的指定版本[引导脚本](Get-AgentSeat.ps1)，随后显示相同的安装计划及管理员授权提示。引导脚本会先验证 ZIP，再运行安装器。
 
-### 3. 打开屏幕
+### ZIP 离线安装
 
-双击 **`View-Seat.cmd`**，或从普通 Windows 账户运行：
+从 [Releases](https://github.com/aksmfosef11/agent-seat/releases) 下载 **`agent-seat-0.9.0-win-x64.zip`** 和 **`SHA256SUMS.txt`**，对比哈希，解压 ZIP 后双击其中的 **`Install-AgentSeat.cmd`**。此方式使用本地文件，不会再次下载。
 
 ```powershell
-& "$env:ProgramFiles\agent-seat\cli\agent-seat.exe" computer view --seat agent
+Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256
 ```
 
-查看器默认只读。先停止 AI 任务，再启用**手动操作**。中文、韩语及其他输入法文本请通过文本框发送；被浏览器拦截的组合键请使用快捷键按钮。可见屏幕约每 600 毫秒刷新一次。
+GitHub 自动生成的源码压缩包不包含可执行程序。普通用户无需安装 Visual Studio、Node.js、Git 或 .NET SDK。
+
+已安装的席位会被复用并打开查看器，不会重建账户、重置密码或更新现有程序文件。参数、仅下载模式及失败恢复请查看[安装说明](docs/zh-CN/INSTALL.md)。
+
+安装后可用 **`View-Seat.cmd`** 再次打开屏幕。先停止 AI 任务，再启用**手动操作**。输入法文本使用文本框；浏览器拦截的组合键使用快捷键按钮。
 
 ## 系统要求
 
@@ -136,6 +134,7 @@ cd agent-seat
 .\scripts\Build-TermWrap.ps1
 dotnet test .\AgentSeat.sln -c Release
 npm test
+powershell -NoProfile -File tests/installer/bootstrap.tests.ps1
 .\scripts\Package-Release.ps1
 ```
 
@@ -156,4 +155,4 @@ npm test
 
 ## 许可证
 
-项目源码采用 [MIT](LICENSE) 许可证。依赖项保留各自的许可证，请查看[第三方声明](THIRD_PARTY_NOTICES.md)。不包含专有 Duo 二进制文件或 Windows 系统 DLL。
+项目源码采用 [MIT](LICENSE) 许可证。依赖项保留各自的许可证，请查看[第三方声明](THIRD_PARTY_NOTICES.md)。

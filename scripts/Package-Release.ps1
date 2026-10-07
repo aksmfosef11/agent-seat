@@ -35,7 +35,7 @@ New-Item -ItemType Directory -Path (Join-Path $stage 'artifacts') -Force | Out-N
 Copy-Item -LiteralPath $publish -Destination (Join-Path $stage 'artifacts\publish') -Recurse
 Copy-Item -LiteralPath $termWrap -Destination (Join-Path $stage 'artifacts\termwrap') -Recurse
 New-Item -ItemType Directory -Path (Join-Path $stage 'scripts'), (Join-Path $stage 'docs'), (Join-Path $stage 'licenses') -Force | Out-Null
-foreach ($file in @('Install.ps1', 'View-Seat.cmd', 'README.md', 'README.ko.md', 'README.zh-CN.md', 'LICENSE', 'SECURITY.md', 'THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $root $file) -Destination $stage }
+foreach ($file in @('Install.ps1', 'Get-AgentSeat.ps1', 'Setup-Seat.ps1', 'Install-AgentSeat.cmd', 'View-Seat.cmd', 'README.md', 'README.ko.md', 'README.zh-CN.md', 'LICENSE', 'SECURITY.md', 'THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $root $file) -Destination $stage }
 New-Item -ItemType Directory -Path (Join-Path $stage 'assets') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'assets\agent-seat-banner.svg') -Destination (Join-Path $stage 'assets')
 foreach ($file in @('Install-MultiSession.ps1', 'Restore-MultiSession.ps1', 'Enable-AgentControl.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $stage 'scripts') }
@@ -81,7 +81,9 @@ if (Test-Path -LiteralPath $zip) { throw "Release ZIP already exists: $zip. Choo
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [IO.Compression.ZipFile]::CreateFromDirectory($stage, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
-[IO.File]::WriteAllText((Join-Path $output 'SHA256SUMS.txt'), "$hash  $([IO.Path]::GetFileName($zip))`r`n", [Text.UTF8Encoding]::new($false))
+Copy-Item -LiteralPath (Join-Path $root 'Install-AgentSeat.cmd') -Destination $output
+$launcherHash = (Get-FileHash -LiteralPath (Join-Path $output 'Install-AgentSeat.cmd') -Algorithm SHA256).Hash
+[IO.File]::WriteAllText((Join-Path $output 'SHA256SUMS.txt'), "$hash  $([IO.Path]::GetFileName($zip))`r`n$launcherHash  Install-AgentSeat.cmd`r`n", [Text.UTF8Encoding]::new($false))
 Write-Host "Release ZIP: $zip"
 Write-Host "SHA256: $hash"
 Write-Host "Staging folder (for inspection): $stage"

@@ -4,17 +4,36 @@
 
 预览安装器面向 Windows 11 Pro/Enterprise/Education x64，不支持 Home、ARM64 或 Windows Server/RDS 自动安装。请使用当前登录的所有者账户及管理员权限。发行 ZIP 已包含 .NET 运行时。安装器消息及原始诊断使用英语。
 
-## 首次安装
+## 引导安装
 
-1. 从 [Releases](https://github.com/aksmfosef11/agent-seat/releases) 下载可执行 ZIP 和 SHA256SUMS.txt。将 `Get-FileHash .\agent-seat-0.8.0-win-x64.zip -Algorithm SHA256` 与校验和对比，再解压到 `C:\agent-seat` 等目录。
-2. 打开 64 位管理员 Windows PowerShell，进入该目录，运行 `.\Install.ps1` 查看计划。
-3. 了解为 Windows 客户端启用并发会话的非官方 TermWrap 修改，再运行 `.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch`。
-4. 安装器创建独立服务、标准账户 `agent-seat-user`、隐藏的本地 RDP 锚点任务、授权列表及令牌。生成的密码通过标准输入传递并由 DPAPI 保存，不显示在屏幕或命令参数中。
-5. 双击 `View-Seat.cmd`，或使用普通所有者账户执行 `& "$env:ProgramFiles\agent-seat\cli\agent-seat.exe" computer view --seat agent`。
+下载 [Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd) 后双击，或在 64 位 Windows PowerShell 中运行：
 
-如果下载的脚本被阻止，请先验证文件，再执行 `Unblock-File .\Install.ps1` 和 `Get-ChildItem .\scripts\*.ps1 | Unblock-File`。必要时仅临时调整当前进程的执行策略，保留系统及组织策略。
+```powershell
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
+```
 
-已有 TermWrap 会被复用，不会替换它或重启 Terminal Services。每个席位应使用独立的 Windows 账户。
+下载固定的 0.9.0 版本，验证 ZIP 大小、SHA-256 校验和及 GitHub 摘要，检查压缩路径和解压文件清单后启动安装。查看计划，输入 INSTALL 接受非官方 TermWrap 修改，再使用同一 Windows 所有者账户确认 UAC。完成后由普通所有者进程打开只读查看器。使用其他管理员账户授权会在安装前停止。
+
+引导消息使用 Windows UI 语言（英语、韩语或简体中文），也可指定 `-Language zh`、`en` 或 `ko`。详细后端诊断保留英语。Windows 安全提示由用户处理。预览脚本没有代码签名，运行前请检查源码及下载来源。启动器只设置当前进程执行策略，不修改系统或组织策略。
+
+仅下载验证，不安装、不请求管理员权限：
+
+```powershell
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1'))) -DownloadOnly
+```
+
+文件保留在 `%LOCALAPPDATA%\agent-seat\Downloads\<唯一文件夹>`。解压后运行 `Setup-Seat.ps1 -Plan` 仅查看计划；`-NoOpen` 禁止安装后自动打开查看器。已有席位会被复用，不更新现有服务文件。已停止或部分安装的服务会保留供诊断，不会擅自替换。
+
+离线安装请下载 ZIP 和 SHA256SUMS.txt，用 `Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256` 对比，解压后双击其中的 Install-AgentSeat.cmd，无需再次下载。如已验证的脚本被阻止，请只对所需文件使用 `Unblock-File`，保留组织策略。
+
+自动化仍可在管理员 PowerShell 中使用底层安装器：
+
+```powershell
+.\Install.ps1
+.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch
+```
+
+它创建专用服务、标准账户、RDP 锚点、授权列表及受保护令牌。生成的密码通过标准输入传递并由 DPAPI 保存，不显示在屏幕或命令参数中。已有 TermWrap 会被复用，不会替换或重启 Terminal Services。每个席位使用独立的 Windows 账户。
 
 ## 查看器和语言
 

@@ -11,3 +11,5 @@ Dates and counts use `Intl` with the selected locale. Shortcuts, commands, ident
 For a new translation, add its native language label and a complete dictionary with the same keys and named placeholders. Run `npm test`, then check the dashboard and open viewer in a browser, including a narrow viewport, a language change with drafted text, persistence after reload and error messages. Update the matching README and install/CLI/MCP guides too.
 
 Localized overview files are `README.md`, `README.ko.md` and `README.zh-CN.md`. Korean guides remain under `docs/`; English and Simplified Chinese guides live in `docs/en/` and `docs/zh-CN/`. They are included in release ZIPs alongside the shared concept banner. These guides describe the same support limits and recovery requirements.
+
+The guided installer (`Get-AgentSeat.ps1` and `Setup-Seat.ps1`) also supports `-Language en|ko|zh`, or automatic Windows UI language selection. Detailed low-level installer diagnostics retain their original English text. Keep scripts containing CJK strings in UTF-8 with BOM for Windows PowerShell 5.1.
