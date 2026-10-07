@@ -9,6 +9,12 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 $version = ([xml](Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
+$sourceCommit = $null
+if (Test-Path -LiteralPath (Join-Path $root '.git')) {
+    $sourceCommit = (& git -C $root rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Could not identify the source commit.' }
+    if (& git -C $root status --porcelain) { throw 'Commit source changes before packaging a release.' }
+}
 $work = Join-Path $root ('artifacts\package-' + [Guid]::NewGuid().ToString('N'))
 $publish = Join-Path $work 'publish'
 $stage = Join-Path $work "agent-seat-$version-win-x64"
@@ -61,7 +67,7 @@ $upstreamNotices | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stage '
 # Refuse a contaminated staging folder rather than silently shipping local secrets or gaming binaries.
 $bad = Get-ChildItem -LiteralPath $stage -Recurse -File | Where-Object { $_.Name -match '^(agent-token\.txt|agent-seats\.json|credential\.dat|appsettings.*\.json)$' -or $_.FullName -match '\\(sunshine|compat|app-launcher)\\' -or $_.Name -match '(SeatStream|ViGEm|SteamLauncher)' }
 if ($bad) { throw "Unexpected private or gaming files in staging: $($bad.Name -join ', ')" }
-@{ product = 'agent-seat'; version = $version; runtime = 'win-x64'; selfContained = $true; dotnetRuntime = $RuntimeVersion; builtAtUtc = [DateTimeOffset]::UtcNow.ToString('O') } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stage 'release.json') -Encoding UTF8
+@{ product = 'agent-seat'; version = $version; sourceCommit = $sourceCommit; runtime = 'win-x64'; selfContained = $true; dotnetRuntime = $RuntimeVersion; builtAtUtc = [DateTimeOffset]::UtcNow.ToString('O') } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stage 'release.json') -Encoding UTF8
 $manifest = @(Get-ChildItem -LiteralPath $stage -Recurse -File | Sort-Object FullName | ForEach-Object {
     @{ path = $_.FullName.Substring($stage.Length + 1).Replace('\','/'); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }
 })
