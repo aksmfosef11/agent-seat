@@ -1,0 +1,16 @@
+<Project>
+  <!-- Pin actual .NET runtimes without overriding the Windows SDK's independent version. -->
+  <Target Name="PinAgentSeatRuntime" BeforeTargets="ProcessFrameworkReferences"
+          DependsOnTargets="AddWindowsSdkKnownFrameworkReferences"
+          Condition="'$(AgentSeatRuntimeVersion)' != ''">
+    <ItemGroup>
+      <KnownFrameworkReference Condition="'%(KnownFrameworkReference.TargetFramework)' == 'net8.0' and '%(KnownFrameworkReference.Identity)' != 'Microsoft.Windows.SDK.NET.Ref'">
+        <DefaultRuntimeFrameworkVersion>$(AgentSeatRuntimeVersion)</DefaultRuntimeFrameworkVersion>
+        <LatestRuntimeFrameworkVersion>$(AgentSeatRuntimeVersion)</LatestRuntimeFrameworkVersion>
+      </KnownFrameworkReference>
+      <KnownAppHostPack Condition="'%(KnownAppHostPack.TargetFramework)' == 'net8.0'">
+        <AppHostPackVersion>$(AgentSeatRuntimeVersion)</AppHostPackVersion>
+      </KnownAppHostPack>
+    </ItemGroup>
+  </Target>
+</Project>

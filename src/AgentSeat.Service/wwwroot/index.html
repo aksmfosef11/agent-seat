@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>agent-seat</title><link rel="stylesheet" href="/styles.css"><script src="/app.js" type="module"></script></head>
+<body>
+  <header class="shell hero"><div><p class="eyebrow">YOUR AI'S WINDOWS DESKTOP</p><h1>agent-seat</h1><p class="lede">AI가 사용하는 별도 데스크톱을 보고, 필요할 때 직접 조작하세요.</p></div><div id="health" class="host-pill">연결 확인 중…</div></header>
+  <main class="shell layout">
+    <section class="panel seats-panel"><div class="section-heading"><div><p class="eyebrow">SEATS</p><h2>AI 좌석</h2></div><button id="refresh" class="secondary" type="button">새로고침</button></div><div id="seats" class="seat-list"></div></section>
+    <aside class="stack"><section class="panel"><h2>화면 열기</h2><p>설치한 CLI에서 아래 명령을 실행하면 토큰 입력 없이 화면을 열 수 있습니다.</p><pre>agent-seat computer view --seat agent</pre><p>여러 좌석은 Install.ps1을 다른 좌석 ID와 Windows 사용자로 실행해 추가하세요.</p></section><section class="panel"><div class="section-heading"><h2>호스트 점검</h2><span id="readiness" class="status neutral">확인 중</span></div><div id="checks" class="check-list"></div></section></aside>
+  </main>
+  <dialog id="viewer" class="remote-viewer" aria-labelledby="viewer-title">
+    <div class="viewer-toolbar"><h2 id="viewer-title">좌석 화면</h2><button id="start-viewer-seat" class="secondary" type="button">세션 시작</button><label class="manual-toggle"><input id="manual-control" type="checkbox"> 직접 조작</label><button id="close-viewer" class="secondary" type="button">닫기</button></div>
+    <p id="viewer-status" role="status">읽기 전용</p><div class="remote-screen-wrap"><img id="remote-screen" tabindex="0" draggable="false" alt="좌석 데스크톱 화면. 직접 조작을 켜고 클릭하면 마우스와 키 입력을 전달합니다."></div>
+    <div class="viewer-toolbar key-toolbar"><span id="frame-time">화면 대기</span><button type="button" data-keys="TAB">Tab</button><button type="button" data-keys="ESC">Esc</button><button type="button" data-keys="ENTER">Enter</button><button type="button" data-keys="CTRL+A">Ctrl+A</button><button type="button" data-keys="CTRL+S">Ctrl+S</button><button type="button" data-keys="CTRL+T">Ctrl+T</button><button type="button" data-keys="CTRL+W">Ctrl+W</button><button type="button" data-keys="ALT+TAB">Alt+Tab</button></div>
+    <div class="text-toolbar"><textarea id="remote-text" rows="2" maxlength="10000" placeholder="한글·IME 입력은 여기에 쓴 뒤 보내세요." aria-label="좌석에 보낼 텍스트"></textarea><button id="send-text" class="primary" type="button">텍스트 보내기</button></div>
+    <p class="field-help">AI 작업을 멈춘 뒤 직접 조작하세요. 클릭·더블 클릭·오른쪽 클릭·드래그·휠을 지원합니다. 브라우저가 가져가는 단축키는 위 버튼을 사용하세요. 화면은 약 0.6초마다 갱신됩니다.</p>
+  </dialog>
+  <footer class="shell footer">agent-seat · 이 PC에서만 접근할 수 있는 좌석 제어</footer>
+</body></html>
