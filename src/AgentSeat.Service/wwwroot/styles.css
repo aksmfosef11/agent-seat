@@ -10,8 +10,10 @@
   --warn: #ffc766;
   --fail: #ff7f7f;
   --pass: #64e3b7;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Microsoft YaHei", "PingFang SC", sans-serif;
 }
+
+html:lang(zh-Hans) { font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; }
 
 * { box-sizing: border-box; }
 
@@ -24,7 +26,7 @@ body {
     var(--bg);
 }
 
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 
 .shell { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
 
@@ -121,9 +123,16 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
 .status.warning { border-color: rgba(255,199,102,.4); color: var(--warn); }
 
 .footer { padding: 22px 0 40px; color: var(--muted); font-size: .75rem; }
+.header-tools { display: grid; justify-items: end; gap: 12px; }
+.language-picker { display: inline-flex; align-items: center; flex-direction: row; gap: 8px; font-size: .8rem; color: var(--muted); }
+.language-picker select { width: auto; min-width: 100px; padding: 8px; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; }
+details { overflow-wrap: anywhere; }
+details summary { cursor: pointer; color: var(--muted); font-size: .75rem; }
+[hidden] { display: none !important; }
 
 @media (max-width: 820px) {
   .hero { align-items: start; flex-direction: column; padding-top: 38px; }
+  .header-tools { justify-items: start; width: 100%; }
   .layout { grid-template-columns: 1fr; }
   .seats-panel { min-height: auto; }
   .empty { min-height: 180px; }

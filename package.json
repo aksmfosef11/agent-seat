@@ -2,5 +2,5 @@
   "name": "agent-seat-ui-tests",
   "private": true,
   "type": "module",
-  "scripts": { "test": "node --test tests/ui/remote-control.test.js" }
+  "scripts": { "test": "node --test tests/ui/i18n.test.js tests/ui/remote-control.test.js" }
 }

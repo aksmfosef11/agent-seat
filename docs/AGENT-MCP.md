@@ -1,5 +1,7 @@
 # 선택 사항: stdio MCP
 
+[English](en/AGENT-MCP.md) · [한국어](AGENT-MCP.md) · [简体中文](zh-CN/AGENT-MCP.md)
+
 MCP는 필수가 아닙니다. `agent-seat computer mcp`는 이미지와 UI 텍스트를 도구 결과로 직접 반환하는 stdio 서버입니다. CLI와 같은 설치 서비스·보호된 토큰·관리자 승인 좌석을 사용합니다. MCP 연결 자체에는 별도 모델 API 키가 필요하지 않습니다.
 
 클라이언트가 지원하는 MCP 설정에 아래 실행 파일과 인자를 등록하세요. 계정이 읽을 수 있는 토큰 파일 경로만 지정하며 토큰 문자열은 복사하지 않습니다. 기존 SeatStream의 MCP 설정을 대체하지 말고 별도 이름으로 추가하세요.

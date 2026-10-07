@@ -1,10 +1,12 @@
 # 설치와 복구
 
+[English](en/INSTALL.md) · [한국어](INSTALL.md) · [简体中文](zh-CN/INSTALL.md)
+
 이 설치기는 Windows 11 Pro/Enterprise/Education x64를 대상으로 합니다. Home, ARM64, Windows Server/RDS용 자동 설치는 제공하지 않습니다. 관리자 권한과 현재 로그인한 소유자의 Windows 계정이 필요합니다. 릴리스 ZIP은 .NET 런타임을 포함합니다.
 
 ## 첫 설치
 
-1. GitHub Releases에서 실행 파일 ZIP과 SHA256SUMS.txt를 내려받고 `Get-FileHash .\agent-seat-0.7.1-win-x64.zip -Algorithm SHA256` 결과를 비교합니다. ZIP을 `C:\agent-seat` 등에 압축 해제합니다.
+1. GitHub Releases에서 실행 파일 ZIP과 SHA256SUMS.txt를 내려받고 `Get-FileHash .\agent-seat-0.8.0-win-x64.zip -Algorithm SHA256` 결과를 비교합니다. ZIP을 `C:\agent-seat` 등에 압축 해제합니다.
 2. 64비트 관리자 PowerShell에서 해당 폴더로 이동해 `.\Install.ps1`으로 변경 계획을 확인합니다.
 3. Windows 클라이언트의 동시 세션 제한을 바꾸는 비공식 TermWrap 패치를 검토한 뒤 `.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch`를 실행합니다. 정책이 다운로드한 스크립트를 막으면 검증한 파일에 한해 `Unblock-File`을 사용하세요. 조직에서 정한 정책은 관리자에게 확인하세요.
 4. 설치기는 별도 서비스, 표준 사용자 `agent-seat-user`, 숨은 로컬 RDP 앵커 작업, 승인 목록과 토큰을 만듭니다. 생성한 비밀번호는 화면이나 명령 인수에 표시하지 않고 DPAPI로 저장합니다.
@@ -19,6 +21,8 @@
 AI 작업을 멈춘 뒤 **직접 조작**을 켜고 화면을 클릭합니다. 클릭·더블 클릭·오른쪽 클릭·드래그·휠·일반 키 입력을 사용할 수 있습니다. 한글 IME는 아래 텍스트 입력칸에 작성한 뒤 **텍스트 보내기**를 누르세요. 브라우저가 먼저 처리하는 조합은 단축키 버튼을 이용하세요. 일시정지 상태에서는 화면 캡처와 직접 조작 모두 차단됩니다. 재개 후 사용하세요.
 
 토큰을 복사하지 않는 `computer view` 세션은 30분 후 만료됩니다. 다시 같은 명령을 실행하면 됩니다. 화면 보기 자체는 AI API를 호출하지 않으며 모델 토큰을 사용하지 않습니다.
+
+대시보드와 보기 창의 언어 선택에서 한국어·영어·중국어 간체를 바꿀 수 있습니다. 첫 방문에는 브라우저 언어를 따르고, 직접 선택한 언어는 브라우저에 저장됩니다. 화면이나 작성 중인 텍스트는 초기화되지 않습니다. 좌석 안의 Windows와 앱 언어는 별도이며 설치기 메시지·진단 원문은 영어를 사용합니다.
 
 ## 추가 좌석
 

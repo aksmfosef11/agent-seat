@@ -47,7 +47,7 @@ export class InputQueue {
   cancel() { this.generation++; this.pending = []; }
   push(action) {
     if (!action) return false;
-    if (this.pending.length >= this.limit) { this.cancel(); this.onError(new Error('입력 대기열이 가득 찼습니다. 직접 조작을 다시 켜세요.')); return false; }
+    if (this.pending.length >= this.limit) { this.cancel(); this.onError(Object.assign(new Error('Input queue full.'), { code: 'input_queue_full' })); return false; }
     this.pending.push({ action, generation: this.generation });
     void this.drain();
     return true;
@@ -68,7 +68,7 @@ export class InputQueue {
 
 export function wireRemoteControl({ dialog, image, manual, send, report }) {
   let path = null, button = 'left', pendingClick = null, clickTimer = null;
-  const queue = new InputQueue(send, error => { disarm(); report(error.message); });
+  const queue = new InputQueue(send, error => { disarm(); report(error); });
   const point = (event, clamp) => screenPoint(image.getBoundingClientRect(), image.naturalWidth, image.naturalHeight, event.clientX, event.clientY, clamp);
   const enabled = () => dialog.open && manual.checked;
   const armed = () => enabled() && image.complete && image.naturalWidth > 0;

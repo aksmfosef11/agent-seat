@@ -1,5 +1,7 @@
 # CLI로 AI 좌석 사용하기
 
+[English](en/AGENT-USAGE.md) · [한국어](AGENT-USAGE.md) · [简体中文](zh-CN/AGENT-USAGE.md)
+
 MCP 없이도 CLI만으로 좌석을 사용할 수 있습니다. 설치 위치는 `C:\Program Files\agent-seat\cli\agent-seat.exe`입니다. 같은 폴더 구조의 `app\AgentSeat.exe`는 서비스 본체이므로 CLI로 실행하지 마세요. CLI는 설치한 소유자의 계정으로 실행하고, 보호된 토큰 파일을 자동으로 읽습니다. 토큰을 모델에게 전달하지 마세요.
 
 ```powershell

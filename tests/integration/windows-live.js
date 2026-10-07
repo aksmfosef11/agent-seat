@@ -44,7 +44,8 @@ async function rpc(method, params) {
 }
 try {
   const init = await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'agent-seat-live-validation', version: '1' } });
-  assert.match(init.serverInfo.version, /^0\.7\.[0-9]+$/);
+  assert.match(init.serverInfo.version, /^0\.[0-9]+\.[0-9]+$/);
+  if (process.env.AGENTSEAT_EXPECTED_VERSION) assert.equal(init.serverInfo.version, process.env.AGENTSEAT_EXPECTED_VERSION);
   child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
   const list = await rpc('tools/list', {});
   assert.deepEqual(list.tools.map(tool => tool.name).sort(), ['seat_act', 'seat_observe', 'seat_start', 'seat_status']);

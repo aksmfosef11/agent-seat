@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">agent-seat — Your desktop. Your AI's desktop. One PC.</title>
+  <desc id="desc">Conceptual diagram of one local Windows PC with a desktop for its owner and a separate desktop for an AI, connected through CLI, MCP and a browser viewer.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0b1420"/><stop offset="1" stop-color="#071712"/></linearGradient>
+    <linearGradient id="accent" x2="1" y2="1"><stop stop-color="#6bf5c0"/><stop offset="1" stop-color="#44bce8"/></linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity=".035"/></pattern>
+  </defs>
+  <rect width="1200" height="520" rx="24" fill="url(#bg)"/>
+  <rect width="1200" height="520" rx="24" fill="url(#grid)"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <g transform="translate(56 42)"><rect width="44" height="44" rx="12" fill="url(#accent)"/><rect x="10" y="11" width="16" height="13" rx="3" fill="#092019"/><rect x="18" y="22" width="16" height="13" rx="3" fill="#092019" stroke="#6bf5c0" stroke-width="2"/></g>
+    <text x="116" y="76" fill="#f1faf6" font-size="34" font-weight="700" letter-spacing="-1">agent-seat</text>
+    <text x="1144" y="71" text-anchor="end" fill="#6ce4b4" font-size="12" font-weight="600" letter-spacing="2">LOCAL · WINDOWS · OPEN SOURCE</text>
+    <text x="56" y="139" fill="#f1faf6" font-size="38" font-weight="600" letter-spacing="-1">Your desktop. Your AI’s desktop. One PC.</text>
+    <text x="56" y="170" fill="#9eafb8" font-size="17">Keep working while your agent uses its own Windows session.</text>
+    <g transform="translate(56 206)">
+      <rect width="508" height="220" rx="15" fill="#121d29" stroke="#354454"/>
+      <path d="M0 42H508" stroke="#354454"/>
+      <circle cx="21" cy="21" r="4" fill="#fa8c82"/><circle cx="36" cy="21" r="4" fill="#f0c66c"/><circle cx="51" cy="21" r="4" fill="#64dab0"/>
+      <text x="74" y="26" fill="#dce7ed" font-size="13" font-weight="600">YOU / YOUR DESKTOP</text>
+      <rect x="22" y="62" width="156" height="132" rx="9" fill="#1a2b3d"/>
+      <rect x="36" y="79" width="93" height="7" rx="3" fill="#92a9bb"/>
+      <rect x="36" y="96" width="124" height="5" rx="2" fill="#47607a"/>
+      <rect x="36" y="111" width="105" height="5" rx="2" fill="#47607a"/>
+      <rect x="36" y="140" width="124" height="37" rx="6" fill="#283f54"/>
+      <text x="203" y="90" fill="#e5eef5" font-size="20" font-weight="600">Stay in your flow.</text>
+      <text x="203" y="122" fill="#9eafb8" font-size="14">Your apps, mouse and keyboard.</text>
+      <text x="203" y="146" fill="#9eafb8" font-size="14">Open the viewer when you need it.</text>
+      <rect x="203" y="165" width="119" height="29" rx="14" fill="#253c50"/><text x="263" y="184" text-anchor="middle" fill="#bdd5e8" font-size="12">OWNER SESSION</text>
+    </g>
+    <g transform="translate(636 206)">
+      <rect width="508" height="220" rx="15" fill="#10251f" stroke="#3b7562"/>
+      <path d="M0 42H508" stroke="#3b7562"/>
+      <circle cx="21" cy="21" r="4" fill="#6bf5c0"/>
+      <text x="40" y="26" fill="#d9fff0" font-size="13" font-weight="600">AGENT / DEDICATED DESKTOP</text>
+      <rect x="22" y="62" width="156" height="132" rx="9" fill="#173b2f"/>
+      <rect x="36" y="79" width="115" height="7" rx="3" fill="#7de9bb"/>
+      <path d="M38 105l7 5-7 5" fill="none" stroke="#7de9bb" stroke-width="2"/>
+      <rect x="52" y="108" width="91" height="4" rx="2" fill="#477b66"/>
+      <rect x="36" y="128" width="106" height="4" rx="2" fill="#477b66"/>
+      <rect x="36" y="145" width="124" height="32" rx="6" fill="#24523f"/>
+      <text x="203" y="90" fill="#e5fff4" font-size="20" font-weight="600">Give AI a place to work.</text>
+      <text x="203" y="122" fill="#a0c4b3" font-size="14">Observe the screen. Send input.</text>
+      <text x="203" y="146" fill="#a0c4b3" font-size="14">Watch, pause or take over.</text>
+      <rect x="203" y="165" width="172" height="29" rx="14" fill="#214d3b"/><text x="289" y="184" text-anchor="middle" fill="#8af0c5" font-size="12">CLI + MCP + LOCAL VIEWER</text>
+    </g>
+    <path d="M582 298h36m-18-18v36" stroke="#5fc9a3" stroke-width="2" stroke-linecap="round"/>
+    <path d="M310 437v13h580v-13" fill="none" stroke="#3c6154" stroke-width="1.5"/>
+    <text x="600" y="481" text-anchor="middle" fill="#8eaaa0" font-size="12" letter-spacing="2">SEPARATE WINDOWS ACCOUNTS · SHARED LOCAL HOST</text>
+  </g>
+</svg>
