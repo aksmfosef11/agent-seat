@@ -41,6 +41,7 @@ function Invoke-AgentSeatSetup {
     . (Join-Path $Root 'Get-AgentSeat.ps1')
     $metadata = Get-Content -LiteralPath (Join-Path $Root 'release.json') -Raw | ConvertFrom-Json
     Assert-AgentSeatPackage $Root $metadata.version
+    . (Join-Path $Root 'scripts\AgentSeat-Installation.ps1')
     $locale = if ($Options.Language -eq 'auto') { [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName } else { $Options.Language }
     $text = switch ($locale) {
         'ko' { @{
@@ -49,6 +50,7 @@ function Invoke-AgentSeatSetup {
             consent = '설치에 동의하면 INSTALL을 입력하세요 (그 외 입력은 취소)'; cancelled = '설치를 취소했습니다. 다운로드 파일은 보관됩니다.'
             elevate = '설치에 관리자 권한이 필요합니다. Windows 승인창을 확인하세요.'
             installed = '이미 설치되어 있습니다 (v{0}). 기존 실행 파일은 업데이트하지 않습니다.'
+            repair = '이 좌석의 설치를 복구해야 합니다. 저장된 계정과 비밀번호를 유지하며 중단된 단계를 다시 진행합니다.'
             success = '좌석 설치 완료. 화면 보기는 읽기 전용으로 열립니다.'
             failed = '설치가 완료되지 않았습니다. 표시된 오류와 docs/INSTALL.md의 복구 안내를 확인하세요.'
         } }
@@ -58,6 +60,7 @@ function Invoke-AgentSeatSetup {
             consent = '同意安装请输入 INSTALL（其他输入取消）'; cancelled = '已取消安装。下载文件已保留。'
             elevate = '安装需要管理员权限，请确认 Windows 授权提示。'
             installed = '已安装 (v{0})。现有程序文件不会更新。'
+            repair = '此席位需要修复。保留已有账户和密码，继续未完成的安装步骤。'
             success = '席位安装完成。查看器将以只读模式打开。'
             failed = '安装未完成。请查看错误和 docs/zh-CN/INSTALL.md 的恢复说明。'
         } }
@@ -67,6 +70,7 @@ function Invoke-AgentSeatSetup {
             consent = 'Type INSTALL to accept and install (anything else cancels)'; cancelled = 'Installation cancelled. Downloaded files were retained.'
             elevate = 'Administrator access is required. Review the Windows UAC prompt.'
             installed = 'Already installed (v{0}). Existing application binaries are not updated.'
+            repair = 'This seat needs repair. Setup preserves its account and password and resumes unfinished steps.'
             success = 'Seat setup complete. The viewer opens read-only.'
             failed = 'Setup did not complete. Review the error and recovery guide in docs/en/INSTALL.md.'
         } }
@@ -77,15 +81,21 @@ function Invoke-AgentSeatSetup {
     if ($Options.Plan) { & (Join-Path $Root 'Install.ps1') @installOptions; return }
     $service = Get-Service -Name agent-seat -ErrorAction SilentlyContinue
     $existing = $false
-    if ($service) {
+    if ($service -and $service.Status -eq 'Running') {
         $health = Invoke-RestMethod 'http://127.0.0.1:38399/api/v1/health' -TimeoutSec 5
         if ($health.mode -ne 'agent-seat') { throw 'Unexpected service on port 38399.' }
         $seats = Invoke-RestMethod 'http://127.0.0.1:38399/api/v1/seats' -TimeoutSec 5
         $match = @($seats | Where-Object { $_.seat.id -eq $Options.SeatId })
         if ($match.Count) {
             if ($match[0].seat.userName -ine $Options.UserName) { throw 'Seat ID belongs to a different Windows account.' }
-            Write-Host ($text.installed -f $health.version)
-            $existing = $true
+            $readiness = Get-AgentSeatInstallationStatus $Options.SeatId $Options.UserName $match[0].seat
+            if ($readiness.Ready) {
+                Write-Host ($text.installed -f $health.version)
+                $existing = $true
+            } else {
+                Write-Host $text.repair -ForegroundColor Yellow
+                foreach ($issue in $readiness.Issues) { Write-Host ('  ' + $issue) }
+            }
         }
     }
     if (-not $existing) {

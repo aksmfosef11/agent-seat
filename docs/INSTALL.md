@@ -6,25 +6,25 @@
 
 ## 안내에 따라 설치하기
 
-[Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/Install-AgentSeat.cmd)를 내려받아 더블 클릭하거나, 64비트 Windows PowerShell에서 한 줄을 실행하세요.
+[Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.2/Install-AgentSeat.cmd)를 내려받아 더블 클릭하거나, 64비트 Windows PowerShell에서 한 줄을 실행하세요.
 
 ```powershell
-& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.1/Get-AgentSeat.ps1')))
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.2/Get-AgentSeat.ps1')))
 ```
 
-0.9.1 배포본을 내려받아 ZIP 크기·SHA-256 체크섬·GitHub 파일 해시를 확인합니다. 압축 내부 경로와 압축 해제된 파일 목록도 검증한 뒤 설치를 시작합니다. 계획을 확인하고 INSTALL을 입력해 비공식 TermWrap 수정에 동의한 뒤, 같은 Windows 소유자 계정으로 관리자 승인창을 확인하세요. 완료 후 일반 소유자 프로세스에서 읽기 전용 화면을 엽니다. 다른 관리자 계정으로 승인하면 설치 전에 중단합니다.
+0.9.2 배포본을 내려받아 ZIP 크기·SHA-256 체크섬·GitHub 파일 해시를 확인합니다. 압축 내부 경로와 압축 해제된 파일 목록도 검증한 뒤 설치를 시작합니다. 계획을 확인하고 INSTALL을 입력해 비공식 TermWrap 수정에 동의한 뒤, 같은 Windows 소유자 계정으로 관리자 승인창을 확인하세요. 완료 후 일반 소유자 프로세스에서 읽기 전용 화면을 엽니다. 다른 관리자 계정으로 승인하면 설치 전에 중단합니다.
 
 설치 안내는 Windows UI 언어에 따라 한국어·영어·중국어 간체로 표시됩니다. `-Language ko`, `en`, `zh`로 지정할 수도 있습니다. 상세 백엔드 진단은 영어를 유지합니다. Windows 보안 승인창은 사용자가 처리합니다. 시험판 스크립트에는 코드 서명이 없으므로 실행 전 소스와 다운로드 출처를 확인하세요. 실행 정책은 해당 프로세스에만 적용하며 시스템·조직 정책을 변경하지 않습니다.
 
 관리자 권한이나 설치 없이 내려받고 검증만 하려면:
 
 ```powershell
-& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.1/Get-AgentSeat.ps1'))) -DownloadOnly
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.2/Get-AgentSeat.ps1'))) -DownloadOnly
 ```
 
-파일은 `%LOCALAPPDATA%\agent-seat\Downloads\<고유 폴더>`에 보관됩니다. ZIP에서 `Setup-Seat.ps1 -Plan`은 변경 없이 계획만 확인하고, `-NoOpen`은 설치 후 화면을 자동으로 열지 않습니다. 기존 좌석이 있으면 재사용하며 서비스 실행 파일은 업데이트하지 않습니다. 중지되거나 설치가 중간에 끝난 서비스는 임의로 교체하지 않습니다.
+파일은 `%LOCALAPPDATA%\agent-seat\Downloads\<고유 폴더>`에 보관됩니다. ZIP에서 `Setup-Seat.ps1 -Plan`은 변경 없이 계획만 확인하고, `-NoOpen`은 설치 후 화면을 자동으로 열지 않습니다. 정상 설치된 좌석은 재사용합니다. 설치가 중단됐다면 같은 계정과 저장된 암호로 이어서 복구합니다. 기존 서비스·CLI 실행 파일은 유지하며, 복구에 필요한 앵커는 버전별 폴더에 설치하고 해당 작업을 수정합니다.
 
-오프라인 설치는 ZIP과 SHA256SUMS.txt를 받아 `Get-FileHash .\agent-seat-0.9.1-win-x64.zip -Algorithm SHA256`으로 비교한 뒤 압축을 풀고 안의 Install-AgentSeat.cmd를 실행하세요. 추가 다운로드는 없습니다. 검증된 스크립트가 차단되면 필요한 파일에만 `Unblock-File`을 적용하고 조직 정책은 유지하세요.
+오프라인 설치는 ZIP과 SHA256SUMS.txt를 받아 `Get-FileHash .\agent-seat-0.9.2-win-x64.zip -Algorithm SHA256`으로 비교한 뒤 압축을 풀고 안의 Install-AgentSeat.cmd를 실행하세요. 추가 다운로드는 없습니다. 검증된 스크립트가 차단되면 필요한 파일에만 `Unblock-File`을 적용하고 조직 정책은 유지하세요.
 
 자동화용 기존 설치 스크립트도 관리자 PowerShell에서 사용할 수 있습니다.
 
@@ -33,7 +33,7 @@
 .\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch
 ```
 
-전용 서비스·표준 계정·로컬 RDP 앵커·승인 목록·보호된 토큰을 만듭니다. 생성한 비밀번호는 표준 입력으로 전달하고 DPAPI로 저장하며 화면이나 명령 인자에 표시하지 않습니다. 기존 TermWrap은 교체하거나 Terminal Services를 재시작하지 않고 재사용합니다. 좌석마다 별도 Windows 계정을 사용하세요.
+전용 서비스·표준 계정·로컬 RDP 앵커·승인 목록·보호된 토큰을 만듭니다. 생성한 비밀번호는 계정 생성 전에 DPAPI로 저장하고 표준 입력으로 전달하며, 만료되지 않도록 설정합니다. RDP 포트는 Windows 리스너 설정을 따릅니다. 기존 TermWrap은 교체하거나 Terminal Services를 재시작하지 않고 재사용합니다. 좌석마다 별도 Windows 계정을 사용하세요.
 
 ## 화면 확인과 직접 조작
 
@@ -53,13 +53,15 @@ AI 작업을 멈춘 뒤 **직접 조작**을 켜고 화면을 클릭합니다. �
 .\Install.ps1 -SeatId agent2 -UserName agent-seat-user2 -DisplayName 'AI Desktop 2' -Apply -IAcceptUnsupportedWindowsClientPatch
 ```
 
-기존 계정이나 ID를 지정하면 비밀번호를 바꾸거나 덮어쓰지 않고 중단합니다. 이 버전에는 인플레이스 업데이터가 없습니다. 새 버전의 파일을 기존 서비스 폴더에 임의로 덮어쓰기 전에 서비스·앵커·설정 백업 절차를 검토하세요.
+다른 좌석이나 설치에 속한 계정·ID는 거부합니다. 같은 관리 좌석은 비밀번호를 재설정하지 않고 복구할 수 있습니다. 이 버전에는 서비스·CLI 업데이터가 없습니다. 해당 실행 파일을 교체하기 전에는 백업 절차를 검토하세요.
 
 ## 설치가 중간에 실패한 경우
 
-자동으로 기존 계정을 삭제하거나 공유 RDP를 되돌리지 않습니다. `Get-Service agent-seat`, `Get-ScheduledTask -TaskName 'agent-seat RDP Anchor - *'`, CLI의 `computer status`로 현재 상태를 확인하세요. 생성된 계정 이름으로 재실행하면 의도적으로 중단됩니다. 상태를 확인한 후 새 이름으로 좌석을 추가하거나 생성된 좌석의 앵커를 복구하세요.
+같은 좌석 ID·계정 이름·설치 소유자의 Windows 계정으로 설치기를 다시 실행하세요. 보호된 설치 기록에서 계정 SID와 미완료 단계를 확인하고, 저장된 암호를 복구해 앵커·RDP 포트·예약 작업을 수정합니다. 암호가 없거나 계정이 삭제·교체됐거나 작업 소유자가 다르면 점검을 위해 중단합니다. 기존 암호를 재설정하거나 계정을 삭제하거나 공유 RDP를 자동으로 되돌리지 않습니다. `Get-Service agent-seat`, `Get-ScheduledTask -TaskName 'agent-seat RDP Anchor - *'`, CLI의 `computer status`로 상태를 확인할 수 있습니다.
 
-첫 로그온의 개인정보/초기 설정 화면이 나타나는 Windows 빌드가 있습니다. 이때 숨은 앵커는 연결됐어도 일반 앱 작업이 준비되지 않을 수 있습니다. 좌석 보기 창에서 초기 설정을 완료하세요. 연결이 없으면 앵커의 `status --seat agent`로 DPAPI 소유자와 로그를 확인하세요. 소유자가 로그아웃하면 숨은 앵커가 종료됩니다. 다시 로그인한 뒤 CLI `computer start`로 시작하세요.
+첫 로그온의 개인정보/초기 설정 화면이 나타나는 Windows 빌드가 있습니다. 좌석 보기 창에서 초기 설정을 완료하세요. 연결이 없으면 설치 소유자로 앵커의 `status --seat agent`와 로그를 확인하세요. 설정과 암호는 `%ProgramData%\agent-seat\RdpAnchors\<소유자 SID>`에 저장됩니다.
+
+재부팅 후 서비스는 자동으로 시작합니다. 설치 소유자의 Windows 계정으로 로그인한 뒤 `computer start --seat agent`를 실행하거나 보기 창의 **세션 시작**을 누르세요. 앵커는 해당 소유자의 대화형 로그인 토큰을 사용합니다. Windows 자동 로그인이나 AI 좌석 자동 시작은 설정하지 않습니다. 소유자가 로그아웃하면 앵커도 종료됩니다. 복구와 재부팅 상태 검사는 모의 환경에서 통과했으며, 실제 새 PC 설치·재부팅 검증은 남아 있습니다.
 
 ## agent-seat만 중지하기
 

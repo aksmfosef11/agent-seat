@@ -1,7 +1,7 @@
 # Public bootstrap: downloads only the requested release from aksmfosef11/agent-seat.
 [CmdletBinding()]
 param(
-    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+$')][string]$Version = '0.9.1',
+    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+$')][string]$Version = '0.9.2',
     [ValidatePattern('^[a-z][a-z0-9-]{0,31}$')][string]$SeatId = 'agent',
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$')][string]$UserName = 'agent-seat-user',
     [string]$DisplayName = 'AI Desktop',
@@ -84,7 +84,7 @@ function Assert-AgentSeatPackage {
         if ($entry.path.Contains(':') -or -not $path.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) -or -not $paths.Add($path) -or $entry.sha256 -notmatch '^[0-9a-fA-F]{64}$') { throw 'Invalid package manifest.' }
         if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ine $entry.sha256) { throw "Package integrity check failed: $($entry.path)" }
     }
-    foreach ($required in @('Get-AgentSeat.ps1', 'Install.ps1', 'Setup-Seat.ps1', 'Install-AgentSeat.cmd', 'release.json', 'artifacts/publish/service/AgentSeat.exe', 'artifacts/publish/cli/agent-seat.exe')) {
+    foreach ($required in @('Get-AgentSeat.ps1', 'Install.ps1', 'Setup-Seat.ps1', 'Install-AgentSeat.cmd', 'scripts/AgentSeat-Installation.ps1', 'release.json', 'artifacts/publish/service/AgentSeat.exe', 'artifacts/publish/cli/agent-seat.exe')) {
         if (-not $paths.Contains([IO.Path]::GetFullPath((Join-Path $Root $required)))) { throw "Missing package file: $required" }
     }
     foreach ($file in Get-ChildItem -LiteralPath $Root -File -Recurse) {

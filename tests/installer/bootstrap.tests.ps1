@@ -37,17 +37,17 @@ Check 'HTTP bootstrap parses in PowerShell 5.1 and preserves all three languages
 }
 $zip = New-FixtureArchive 'good' @('nested/file.txt', 'hello.txt')
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
-$release = @{ tag_name = 'v0.9.1'; draft = $false; assets = @(
-    @{ name = 'agent-seat-0.9.1-win-x64.zip'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/agent-seat-0.9.1-win-x64.zip'; state = 'uploaded'; size = (Get-Item -LiteralPath $zip).Length; digest = "sha256:$hash" },
-    @{ name = 'SHA256SUMS.txt'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/SHA256SUMS.txt' }
+$release = @{ tag_name = 'v0.9.2'; draft = $false; assets = @(
+    @{ name = 'agent-seat-0.9.2-win-x64.zip'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.2/agent-seat-0.9.2-win-x64.zip'; state = 'uploaded'; size = (Get-Item -LiteralPath $zip).Length; digest = "sha256:$hash" },
+    @{ name = 'SHA256SUMS.txt'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.2/SHA256SUMS.txt' }
 ) }
 Check 'release assets are pinned to the exact public repository/tag' {
-    $script:asset = Get-AgentSeatReleaseAsset $release '0.9.1'
-    if ($asset.Name -ne 'agent-seat-0.9.1-win-x64.zip') { throw 'Wrong ZIP' }
+    $script:asset = Get-AgentSeatReleaseAsset $release '0.9.2'
+    if ($asset.Name -ne 'agent-seat-0.9.2-win-x64.zip') { throw 'Wrong ZIP' }
     Expect-Failure { Get-AgentSeatReleaseAsset $release '0.8.0' }
     $release.assets[0].browser_download_url = 'https://example.com/installer.zip'
-    Expect-Failure { Get-AgentSeatReleaseAsset $release '0.9.1' }
-    $release.assets[0].browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/agent-seat-0.9.1-win-x64.zip'
+    Expect-Failure { Get-AgentSeatReleaseAsset $release '0.9.2' }
+    $release.assets[0].browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.2/agent-seat-0.9.2-win-x64.zip'
 }
 Check 'checksum parser accepts the intended ZIP and ignores other assets' {
     Assert-AgentSeatDownload $zip ("$hash  $($asset.Name)`r`n$hash  Install-AgentSeat.cmd`r`n") $asset
@@ -58,7 +58,7 @@ Check 'tampered bytes, conflicting checksums, metadata hashes and missing assets
     $asset.Zip.digest = 'sha256:' + ('0' * 64)
     Expect-Failure { Assert-AgentSeatDownload $zip ("$hash  $($asset.Name)") $asset }
     $asset.Zip.digest = "sha256:$hash"
-    Expect-Failure { Get-AgentSeatReleaseAsset @{ tag_name = 'v0.9.1'; assets = @() } '0.9.1' }
+    Expect-Failure { Get-AgentSeatReleaseAsset @{ tag_name = 'v0.9.2'; assets = @() } '0.9.2' }
 }
 Check 'normal archives extract into a new directory' {
     $destination = Join-Path $testRoot 'expanded-good'
@@ -78,20 +78,20 @@ Check 'traversal, absolute paths, ADS, Windows aliases and duplicate names are r
 Check 'package identity, complete manifest and tamper checks protect installer execution' {
     $package = Join-Path $testRoot 'package'
     New-Item -ItemType Directory -Path $package | Out-Null
-    foreach ($name in @('Get-AgentSeat.ps1', 'Install.ps1', 'Setup-Seat.ps1', 'Install-AgentSeat.cmd', 'artifacts/publish/service/AgentSeat.exe', 'artifacts/publish/cli/agent-seat.exe')) {
+    foreach ($name in @('Get-AgentSeat.ps1', 'Install.ps1', 'Setup-Seat.ps1', 'Install-AgentSeat.cmd', 'scripts/AgentSeat-Installation.ps1', 'artifacts/publish/service/AgentSeat.exe', 'artifacts/publish/cli/agent-seat.exe')) {
         $path = Join-Path $package $name; New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force | Out-Null
         [IO.File]::WriteAllText($path, 'fixture')
     }
-    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.1","runtime":"win-x64","selfContained":true}')
+    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.2","runtime":"win-x64","selfContained":true}')
     $manifest = @(Get-ChildItem -LiteralPath $package -File -Recurse | ForEach-Object { @{ path = $_.FullName.Substring($package.Length + 1); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash } })
     [IO.File]::WriteAllText((Join-Path $package 'manifest.json'), ($manifest | ConvertTo-Json))
-    Assert-AgentSeatPackage $package '0.9.1'
+    Assert-AgentSeatPackage $package '0.9.2'
     Expect-Failure { Assert-AgentSeatPackage $package '0.8.0' }
     [IO.File]::WriteAllText((Join-Path $package 'undeclared.txt'), 'fixture')
-    Expect-Failure { Assert-AgentSeatPackage $package '0.9.1' }
+    Expect-Failure { Assert-AgentSeatPackage $package '0.9.2' }
     Remove-Item -LiteralPath (Join-Path $package 'undeclared.txt')
     [IO.File]::WriteAllText((Join-Path $package 'Install.ps1'), 'tampered')
-    Expect-Failure { Assert-AgentSeatPackage $package '0.9.1' }
+    Expect-Failure { Assert-AgentSeatPackage $package '0.9.2' }
 }
 Check 'elevation preserves arbitrary display names as data rather than code' {
     $captureScript = Join-Path $testRoot "capture with ' quote.ps1"
@@ -106,11 +106,13 @@ function New-SetupFixture {
     $package = Join-Path $testRoot ('setup-' + [Guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $package | Out-Null
     Copy-Item -LiteralPath (Join-Path $repoRoot 'Get-AgentSeat.ps1'), (Join-Path $repoRoot 'Setup-Seat.ps1'), (Join-Path $repoRoot 'Install-AgentSeat.cmd') -Destination $package
+    New-Item -ItemType Directory -Path (Join-Path $package 'scripts') | Out-Null
+    [IO.File]::WriteAllText((Join-Path $package 'scripts/AgentSeat-Installation.ps1'), 'function Get-AgentSeatInstallationStatus { return @{ Ready = $global:setupFixtureReady; Issues = @("RDP anchor task is missing.") } }')
     [IO.File]::WriteAllText((Join-Path $package 'Install.ps1'), 'param($SeatId,$UserName,$DisplayName,[switch]$Apply) if ($Apply) { throw "Install must not execute" }')
     foreach ($name in @('artifacts/publish/service/AgentSeat.exe', 'artifacts/publish/cli/agent-seat.exe')) {
         $path = Join-Path $package $name; New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force | Out-Null; [IO.File]::WriteAllText($path, 'fixture')
     }
-    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.1","runtime":"win-x64","selfContained":true}')
+    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.2","runtime":"win-x64","selfContained":true}')
     $manifest = @(Get-ChildItem -LiteralPath $package -File -Recurse | ForEach-Object { @{ path = $_.FullName.Substring($package.Length + 1); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash } })
     [IO.File]::WriteAllText((Join-Path $package 'manifest.json'), ($manifest | ConvertTo-Json))
     return $package
@@ -123,7 +125,8 @@ Check 'cancelled consent performs neither elevation nor installation' {
     Invoke-AgentSeatSetup $fixture (Join-Path $fixture 'Setup-Seat.ps1') @{ SeatId = 'agent'; UserName = 'agent-seat-user'; DisplayName = 'AI Desktop'; Language = 'en'; NoOpen = $true }
 }
 Check 'a repeated installation keeps the existing seat and skips installer/elevation' {
-    function Get-Service { return @{ Name = 'agent-seat' } }
+    $global:setupFixtureReady = $true
+    function Get-Service { return @{ Name = 'agent-seat'; Status = 'Running' } }
     function Read-Host { throw 'Unexpected consent prompt' }
     function Start-Process { throw 'Unexpected elevation' }
     function Invoke-RestMethod {
@@ -134,6 +137,21 @@ Check 'a repeated installation keeps the existing seat and skips installer/eleva
     $fixture = New-SetupFixture
     Invoke-AgentSeatSetup $fixture (Join-Path $fixture 'Setup-Seat.ps1') @{ SeatId = 'agent'; UserName = 'agent-seat-user'; DisplayName = 'AI Desktop'; Language = 'ko'; NoOpen = $true }
     Expect-Failure { Invoke-AgentSeatSetup $fixture (Join-Path $fixture 'Setup-Seat.ps1') @{ SeatId = 'agent'; UserName = 'other-user'; Language = 'en'; NoOpen = $true } }
+}
+Check 'an interrupted registered seat is not declared installed and cancellation performs no repair' {
+    $global:setupFixtureReady = $false
+    $global:setupConsentPrompts = 0
+    function Get-Service { return @{ Name = 'agent-seat'; Status = 'Running' } }
+    function Read-Host { $global:setupConsentPrompts++; return 'cancel' }
+    function Start-Process { throw 'Cancelled repair must not elevate' }
+    function Invoke-RestMethod {
+        param([string]$Uri, $TimeoutSec)
+        if ($Uri.EndsWith('/health')) { return @{ mode = 'agent-seat'; version = '0.9.2' } }
+        return @(@{ seat = @{ id = 'agent'; userName = 'agent-seat-user' } })
+    }
+    $fixture = New-SetupFixture
+    Invoke-AgentSeatSetup $fixture (Join-Path $fixture 'Setup-Seat.ps1') @{ SeatId = 'agent'; UserName = 'agent-seat-user'; DisplayName = 'AI Desktop'; Language = 'en'; NoOpen = $true }
+    if ($global:setupConsentPrompts -ne 1) { throw 'The incomplete seat bypassed repair consent' }
 }
 Check 'UAC under another Windows owner is rejected before package/host actions' {
     Expect-Failure { Invoke-AgentSeatSetup 'unused' 'unused' @{ Elevated = $true; ExpectedOwnerSid = 'wrong'; ExpectedSessionId = -1 } }
