@@ -36,7 +36,6 @@ AI 需要一个打开应用、读取屏幕并执行桌面任务的工作空间�
 | 📝 按需观察 | UI 文本、未变化画面检测及变化区域截图 |
 | ⏸️ 所有者控制 | 在本地仪表板暂停、恢复或停止输入 |
 | 🌐 三种界面语言 | 英语、韩语、简体中文，记住所选语言 |
-| 🤝 与 SeatStream 共存 | 独立服务、账户、数据、助手及 API 端口 |
 
 发行 ZIP 包含服务、CLI、RDP 锚点、输入助手及 .NET 运行时。不包含 Sunshine、Moonlight、Steam 启动器或游戏手柄驱动。
 
@@ -127,20 +126,6 @@ $cli = "$env:ProgramFiles\agent-seat\cli\agent-seat.exe"
 
 此设置仅改变 agent-seat 的界面，不改变席位内的 Windows 或应用语言。为保持兼容性，CLI/API 机器消息及原始诊断仍使用英语。未知诊断信息会保留，不会被猜测翻译或隐藏。
 
-## 保留朋友的游戏席位
-
-agent-seat 与游戏用 SeatStream 分开安装。
-
-| 组件 | agent-seat | SeatStream |
-| --- | --- | --- |
-| 服务 | `agent-seat` | `SeatStream` |
-| 应用 | `%ProgramFiles%\agent-seat` | `%ProgramFiles%\SeatStream` |
-| 数据与令牌 | `%ProgramData%\agent-seat` | `%ProgramData%\SeatStream` |
-| 本地 API/UI | `127.0.0.1:38399` | `127.0.0.1:38299` |
-| 默认席位账户 | `agent-seat-user` | 保留现有账户 |
-
-已存在的 TermWrap 会被复用，不会替换它或重启 Terminal Services。RDP/Terminal Services 仍是共享组件；只要任一应用依赖它，就不要回滚。
-
 ## 构建与贡献
 
 开发需要 Git、.NET 8 SDK、安装了 **C++ 桌面开发**及 Windows SDK 的 Visual Studio/Build Tools。UI 测试需要 Node.js。
@@ -156,7 +141,7 @@ npm test
 
 打包前请提交源代码修改；发行包会记录源码提交。构建产物和本地凭据不纳入 Git。请查看[发行流程](docs/RELEASING.md)和[本地化维护](docs/LOCALIZATION.md)。
 
-[问题报告](https://github.com/aksmfosef11/agent-seat/issues)请包含 Windows 版本、构建号及复现步骤，移除令牌、凭据和私人截图。新机器安装、重新登录及与 SeatStream 共存的测试对稳定发行尤其有帮助。
+[问题报告](https://github.com/aksmfosef11/agent-seat/issues)请包含 Windows 版本、构建号及复现步骤，移除令牌、凭据和私人截图。新机器安装及重新登录测试对稳定发行尤其有帮助。
 
 ## 文档
 

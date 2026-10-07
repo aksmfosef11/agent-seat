@@ -12,7 +12,7 @@
 4. 설치기는 별도 서비스, 표준 사용자 `agent-seat-user`, 숨은 로컬 RDP 앵커 작업, 승인 목록과 토큰을 만듭니다. 생성한 비밀번호는 화면이나 명령 인수에 표시하지 않고 DPAPI로 저장합니다.
 5. `View-Seat.cmd`를 더블 클릭하거나, 일반 사용자 PowerShell에서 `& "$env:ProgramFiles\agent-seat\cli\agent-seat.exe" computer view --seat agent`를 실행합니다.
 
-이미 SeatStream이 있다면 기존 TermWrap을 재사용하고 Terminal Services를 재시작하지 않습니다. 기존 앱, 친구 계정, Sunshine, 드라이버 설정은 수정하지 않습니다. 기본 AI 계정 이름도 기존 `seat-agent`와 다릅니다. 같은 Windows 사용자 이름을 두 앱에서 공유하지 마세요.
+기존 TermWrap 구성이 있으면 재사용하고 Terminal Services를 재시작하지 않습니다. 각 좌석에는 별도 Windows 계정을 사용하세요.
 
 ## 화면 확인과 직접 조작
 
@@ -42,12 +42,12 @@ AI 작업을 멈춘 뒤 **직접 조작**을 켜고 화면을 클릭합니다. �
 
 ## agent-seat만 중지하기
 
-먼저 AI를 중지하고 좌석에서 열린 파일을 저장하세요. `computer close-seat --seat agent --keep-files`는 해당 AI 세션만 로그오프합니다. 관리자 PowerShell의 `Stop-Service agent-seat`는 새 서비스만 중지합니다. SeatStream과 친구 좌석은 유지됩니다. 공유 TermWrap을 되돌리거나 TermService를 중지하지 마세요.
+먼저 AI를 중지하고 좌석에서 열린 파일을 저장하세요. `computer close-seat --seat agent --keep-files`는 해당 AI 세션만 로그오프합니다. 관리자 PowerShell의 `Stop-Service agent-seat`는 새 서비스만 중지합니다. 공유 TermWrap을 되돌리거나 TermService를 중지하지 마세요.
 
-앱 제거는 agent-seat 서비스와 `agent-seat RDP Anchor - …` 작업만 제거한 후 별도 앱/데이터 폴더와 자신이 만든 계정을 검토하여 정리합니다. Windows 사용자 프로필과 작업 파일은 자동 삭제하지 않습니다. 삭제 대상이 SeatStream인지 반드시 구분하세요.
+앱 제거는 agent-seat 서비스와 `agent-seat RDP Anchor - …` 작업만 제거한 후 별도 앱/데이터 폴더와 자신이 만든 계정을 검토하여 정리합니다. Windows 사용자 프로필과 작업 파일은 자동 삭제하지 않습니다. agent-seat가 만든 계정과 파일만 정리하세요.
 
 ## Windows 원격 세션 패치 복구
 
 새로 TermWrap을 적용할 때 `Install-MultiSession.ps1`은 `%ProgramData%\agent-seat\backups`에 기존 레지스트리 값의 백업을 남깁니다. 적용 후 RDP 리스너가 정상화되지 않으면 즉시 해당 백업으로 복구합니다. 수동 복구는 `scripts\Restore-MultiSession.ps1 -BackupFile <해당 설치의 백업 파일> -Apply`입니다.
 
-공유 TermWrap 복구는 agent-seat 제거와 별개입니다. SeatStream 또는 다른 RDP 좌석이 해당 패치를 사용 중이면 먼저 모든 세션을 저장·종료하고 영향 범위를 확인하세요. 새 Windows 업데이트에서 동작이 바뀔 수 있습니다. 모든 PC/빌드에서의 설치 성공을 보장하는 버전은 아닙니다.
+공유 TermWrap 복구는 agent-seat 제거와 별개입니다. 다른 RDP 세션이 해당 패치를 사용 중이면 먼저 모든 세션을 저장·종료하고 영향 범위를 확인하세요. 새 Windows 업데이트에서 동작이 바뀔 수 있습니다. 모든 PC/빌드에서의 설치 성공을 보장하는 버전은 아닙니다.

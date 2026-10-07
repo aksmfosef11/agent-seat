@@ -36,7 +36,6 @@ Use it to give an existing AI agent a desktop workspace, explore Windows app aut
 | 📝 Selective observations | UI text, unchanged-frame detection and changed-region crops |
 | ⏸️ Owner controls | Pause, resume and stop input from the local dashboard |
 | 🌐 Three UI languages | English, Korean and Simplified Chinese with a saved language choice |
-| 🤝 SeatStream coexistence | Separate service, account, data, helper and API port |
 
 The release includes the service, CLI, RDP anchor, input helper and .NET runtime. Sunshine, Moonlight, Steam launchers and gamepad drivers are excluded.
 
@@ -127,20 +126,6 @@ The dashboard and viewer support **English · 한국어 · 中文（简体）**.
 
 This changes agent-seat's interface, not the Windows language or the apps inside the seat. CLI/API machine messages and original diagnostics stay in English for compatibility. Unknown provider diagnostics remain available rather than being guessed or hidden.
 
-## Keep your friend seats
-
-agent-seat installs independently of the gaming SeatStream app:
-
-| Component | agent-seat | SeatStream |
-| --- | --- | --- |
-| Service | `agent-seat` | `SeatStream` |
-| Applications | `%ProgramFiles%\agent-seat` | `%ProgramFiles%\SeatStream` |
-| Data and token | `%ProgramData%\agent-seat` | `%ProgramData%\SeatStream` |
-| Local API/UI | `127.0.0.1:38399` | `127.0.0.1:38299` |
-| Default seat account | `agent-seat-user` | Existing accounts retained |
-
-An existing TermWrap dependency is reused without replacement or a Terminal Services restart. RDP/Terminal Services remains shared: do not roll it back while either app depends on it.
-
 ## Build and contribute
 
 Developers need Git, .NET 8 SDK, Visual Studio/Build Tools with **Desktop development with C++** and the Windows SDK. Node.js is needed for UI tests.
@@ -156,7 +141,7 @@ npm test
 
 Commit source changes before packaging; the release records its source commit. Generated binaries and local credentials stay out of Git. See [releasing](docs/RELEASING.md) and [localization](docs/LOCALIZATION.md).
 
-Reports with a Windows edition/build and clear reproduction steps help most. Remove tokens, credentials and personal screenshots before opening an [issue](https://github.com/aksmfosef11/agent-seat/issues). Fresh-install, re-login and coexistence testing are especially useful before a stable release.
+Reports with a Windows edition/build and clear reproduction steps help most. Remove tokens, credentials and personal screenshots before opening an [issue](https://github.com/aksmfosef11/agent-seat/issues). Fresh-install and re-login testing are especially useful before a stable release.
 
 ## Documentation
 

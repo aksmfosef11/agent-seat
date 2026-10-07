@@ -14,7 +14,7 @@ The preview installer targets Windows 11 Pro/Enterprise/Education x64. It does n
 
 If downloaded scripts are blocked, verify the download before using `Unblock-File .\Install.ps1` and `Get-ChildItem .\scripts\*.ps1 | Unblock-File`. Use a process-only execution policy if necessary; preserve machine and organization policies.
 
-Existing SeatStream, friend accounts, Sunshine and gaming devices are retained. An active TermWrap dependency is reused without replacing it or restarting Terminal Services. The new default account is distinct from `seat-agent`; do not share one Windows seat account between the apps.
+An active TermWrap dependency is reused without replacing it or restarting Terminal Services. Use a separate Windows account for each seat.
 
 ## Viewer and language
 
@@ -42,7 +42,7 @@ Some Windows builds show privacy or first-login setup inside the new session. Co
 
 Stop the AI and save open files. `computer close-seat --seat agent --keep-files` logs off only the AI session. Administrator command `Stop-Service agent-seat` stops the new service. Do not stop TermService or roll back shared TermWrap to stop this app.
 
-For removal, remove only the `agent-seat` service and `agent-seat RDP Anchor - …` tasks, then inspect the separate application/data folders and created accounts before cleanup. User profiles and work files are not automatically deleted. Distinguish every target from SeatStream.
+For removal, remove only the `agent-seat` service and `agent-seat RDP Anchor - …` tasks, then inspect the separate application/data folders and created accounts before cleanup. User profiles and work files are not automatically deleted. Remove only accounts and files created for agent-seat.
 
 ## Shared RDP recovery
 

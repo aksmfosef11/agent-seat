@@ -14,7 +14,7 @@
 
 如果下载的脚本被阻止，请先验证文件，再执行 `Unblock-File .\Install.ps1` 和 `Get-ChildItem .\scripts\*.ps1 | Unblock-File`。必要时仅临时调整当前进程的执行策略，保留系统及组织策略。
 
-已安装的 SeatStream、朋友账户、Sunshine 及游戏设备设置保持不变。现有 TermWrap 会被复用，不会替换它或重启 Terminal Services。新默认账户与 `seat-agent` 不同；两个应用不要共用同一个 Windows 席位账户。
+已有 TermWrap 会被复用，不会替换它或重启 Terminal Services。每个席位应使用独立的 Windows 账户。
 
 ## 查看器和语言
 
@@ -42,7 +42,7 @@
 
 先停止 AI 并保存文件。`computer close-seat --seat agent --keep-files` 只注销 AI 会话。管理员命令 `Stop-Service agent-seat` 只停止新服务。不要通过停止 TermService 或回滚共享 TermWrap 来停止此应用。
 
-移除时只删除 `agent-seat` 服务及 `agent-seat RDP Anchor - …` 任务，再检查独立应用、数据目录和创建的账户。不会自动删除用户配置文件或工作文件。请确保每个目标与 SeatStream 区分。
+移除时只删除 `agent-seat` 服务及 `agent-seat RDP Anchor - …` 任务，再检查独立应用、数据目录和创建的账户。不会自动删除用户配置文件或工作文件。仅清理为 agent-seat 创建的账户和文件。
 
 ## 共享 RDP 恢复
 

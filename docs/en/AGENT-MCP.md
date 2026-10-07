@@ -4,7 +4,7 @@
 
 MCP is optional. `agent-seat computer mcp` is a stdio server that returns images and UI text directly in tool results. It uses the same installed service, protected token and approved seat as the CLI. Connecting it needs no separate model API key.
 
-Register the executable and arguments in your MCP client's settings. Specify a readable token file path, not its secret contents. Add a separate entry; retain existing SeatStream MCP settings.
+Register the executable and arguments in your MCP client's settings. Specify a readable token file path, not its secret contents. Add a separate entry and retain your other MCP servers.
 
 ```toml
 [mcp_servers.agent_seat_computer]

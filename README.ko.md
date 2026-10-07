@@ -36,7 +36,6 @@ AI에게 앱을 열고, 화면을 읽고, 데스크톱 작업을 수행할 공�
 | 📝 필요한 관찰만 전달 | UI 텍스트, 동일 화면 감지, 변경 영역 이미지 |
 | ⏸️ 소유자 제어 | 로컬 대시보드에서 일시정지·재개·입력 중지 |
 | 🌐 세 언어 | 한국어·영어·중국어 간체, 선택한 언어 저장 |
-| 🤝 SeatStream과 함께 사용 | 서비스·계정·데이터·도우미·API 포트 분리 |
 
 배포 ZIP에는 서비스, CLI, RDP 앵커, 입력 도우미와 .NET 런타임이 들어 있습니다. Sunshine, Moonlight, Steam 실행기, 게임패드 드라이버는 포함하지 않습니다.
 
@@ -127,20 +126,6 @@ $cli = "$env:ProgramFiles\agent-seat\cli\agent-seat.exe"
 
 agent-seat UI 언어만 바뀝니다. 좌석 안의 Windows와 앱 언어는 그대로입니다. CLI/API의 기계용 메시지와 진단 원문은 호환성을 위해 영어를 유지합니다. 알 수 없는 공급자 진단을 추측해서 번역하거나 숨기지 않습니다.
 
-## 친구용 좌석 유지
-
-게임용 SeatStream과 별도로 설치합니다.
-
-| 구성 | agent-seat | 기존 SeatStream |
-| --- | --- | --- |
-| 서비스 | `agent-seat` | `SeatStream` |
-| 앱 | `%ProgramFiles%\agent-seat` | `%ProgramFiles%\SeatStream` |
-| 데이터·토큰 | `%ProgramData%\agent-seat` | `%ProgramData%\SeatStream` |
-| 로컬 API/UI | `127.0.0.1:38399` | `127.0.0.1:38299` |
-| 기본 좌석 계정 | `agent-seat-user` | 기존 계정 유지 |
-
-기존 TermWrap은 교체하거나 Terminal Services를 재시작하지 않고 재사용합니다. RDP/Terminal Services는 공유 구성 요소이므로, 어느 앱이든 사용 중이면 이를 되돌리지 마세요.
-
 ## 빌드와 기여
 
 개발에는 Git, .NET 8 SDK, **C++를 사용한 데스크톱 개발** 및 Windows SDK가 설치된 Visual Studio/Build Tools가 필요합니다. UI 테스트에는 Node.js를 사용합니다.
@@ -156,7 +141,7 @@ npm test
 
 배포를 묶기 전에 소스 변경을 커밋하세요. 릴리스는 소스 커밋을 기록합니다. 빌드 파일과 로컬 자격증명은 Git에서 제외됩니다. [릴리스 절차](docs/RELEASING.md)와 [다국어 관리](docs/LOCALIZATION.md)를 참고하세요.
 
-[이슈](https://github.com/aksmfosef11/agent-seat/issues)에는 Windows 에디션·빌드와 재현 절차를 적어 주세요. 토큰, 자격증명, 개인 화면은 제거하세요. 안정 버전을 위한 새 PC 설치·재로그인·SeatStream 동시 사용 검증도 환영합니다.
+[이슈](https://github.com/aksmfosef11/agent-seat/issues)에는 Windows 에디션·빌드와 재현 절차를 적어 주세요. 토큰, 자격증명, 개인 화면은 제거하세요. 안정 버전을 위한 새 PC 설치·재로그인 검증도 환영합니다.
 
 ## 문서
 
