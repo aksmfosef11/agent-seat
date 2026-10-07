@@ -6,7 +6,7 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
 const seat = process.argv[2] || 'agent';
-const cli = join(process.env.ProgramFiles, 'agent-seat', 'cli', 'agent-seat.exe');
+const cli = process.env.AGENTSEAT_CLI || join(process.env.ProgramFiles, 'agent-seat', 'cli', 'agent-seat.exe');
 const base = 'http://127.0.0.1:38399/api/v1';
 const token = (await readFile(join(process.env.ProgramData, 'agent-seat', 'agent-token.txt'), 'utf8')).trim();
 const headers = { Authorization: `Bearer ${token}` };
@@ -44,7 +44,7 @@ async function rpc(method, params) {
 }
 try {
   const init = await rpc('initialize', { protocolVersion: '2025-11-25', capabilities: {}, clientInfo: { name: 'agent-seat-live-validation', version: '1' } });
-  assert.equal(init.serverInfo.version, '0.7.0');
+  assert.match(init.serverInfo.version, /^0\.7\.[0-9]+$/);
   child.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
   const list = await rpc('tools/list', {});
   assert.deepEqual(list.tools.map(tool => tool.name).sort(), ['seat_act', 'seat_observe', 'seat_start', 'seat_status']);

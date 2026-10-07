@@ -7,7 +7,7 @@ using AgentSeat.Core.Models;
 
 namespace AgentSeat.Windows;
 
-public sealed class WindowsHostInspector(SunshineStreamingOptions streamingOptions) : IHostInspector
+public sealed class WindowsHostInspector : IHostInspector
 {
     private const string TerminalServerKey = @"SYSTEM\CurrentControlSet\Control\Terminal Server";
     private const string RdpTcpKey = TerminalServerKey + @"\WinStations\RDP-Tcp";
@@ -26,10 +26,12 @@ public sealed class WindowsHostInspector(SunshineStreamingOptions streamingOptio
         var displayVersion = ReadString(CurrentVersionKey, "DisplayVersion");
         var build = ReadString(CurrentVersionKey, "CurrentBuildNumber");
         var installationType = ReadString(CurrentVersionKey, "InstallationType") ?? string.Empty;
-        var operatingSystem = string.Join(' ', new[] { productName, displayVersion, build }
-            .Where(value => !string.IsNullOrWhiteSpace(value)));
         var serverEdition = installationType.Contains("Server", StringComparison.OrdinalIgnoreCase) ||
                             productName.Contains("Server", StringComparison.OrdinalIgnoreCase);
+        // Client ProductName can retain "Windows 10" after an upgrade; report the edition and build directly.
+        var hostName = serverEdition ? productName : $"Windows {ReadString(CurrentVersionKey, "EditionID")}";
+        var operatingSystem = string.Join(' ', new[] { hostName, displayVersion, build is null ? null : $"(build {build})" }
+            .Where(value => !string.IsNullOrWhiteSpace(value)));
 
         checks.Add(new PreflightCheck(
             "windows",
@@ -37,74 +39,15 @@ public sealed class WindowsHostInspector(SunshineStreamingOptions streamingOptio
             PreflightStatus.Pass,
             operatingSystem));
 
-        var sunshineExecutable = Path.Combine(
-            Path.GetFullPath(streamingOptions.TemplateDirectory),
-            "sunshine.exe");
-        var sunshineApps = Path.Combine(
-            Path.GetFullPath(streamingOptions.TemplateDirectory),
-            "assets",
-            "apps.json");
-        var sunshineReady = File.Exists(sunshineExecutable) && File.Exists(sunshineApps);
-        checks.Add(new PreflightCheck(
-            "sunshine_template",
-            "Verified Sunshine portable",
-            sunshineReady ? PreflightStatus.Pass : PreflightStatus.Fail,
-            sunshineReady
-                ? $"Sunshine template found at '{streamingOptions.TemplateDirectory}'."
-                : $"Sunshine portable template is incomplete at '{streamingOptions.TemplateDirectory}'.",
-            sunshineReady ? null : "Run scripts/Get-Sunshine.ps1, then restart AgentSeat."));
-
-        var steamExecutable = SteamLocator.FindExecutable();
-        var steamIpcReady = steamExecutable is not null &&
-                            SteamLocator.SupportsMasterIpcOverride(steamExecutable);
-        checks.Add(new PreflightCheck(
-            "steam_host",
-            "Steam host application",
-            steamIpcReady ? PreflightStatus.Pass : PreflightStatus.Fail,
-            steamExecutable is null
-                ? "Steam is not installed. The default Moonlight Steam entry cannot start."
-                : steamIpcReady
-                    ? $"Steam at '{steamExecutable}' can seed a separate per-seat runtime and supports a separate master IPC name. AgentSeat stores no Steam credentials."
-                    : $"Steam is installed at '{steamExecutable}', but this build does not expose the required master IPC override.",
-            steamIpcReady
-                ? null
-                : "Install or update the official Steam client. Do not enter a Steam username or password into AgentSeat."));
-
-        var isolationReady = SteamIsolationRuntime.IsComplete(
-            streamingOptions.SteamLauncherPath,
-            streamingOptions.AppCompatDirectory);
-        checks.Add(new PreflightCheck(
-            "steam_isolation",
-            "Per-seat Steam AppCompat isolation",
-            isolationReady ? PreflightStatus.Pass : PreflightStatus.Fail,
-            isolationReady
-                ? $"The managed Steam launcher and x86/x64 compatibility runtimes are ready at '{streamingOptions.AppCompatDirectory}'."
-                : $"The Steam launcher or native compatibility files are incomplete. Launcher: '{streamingOptions.SteamLauncherPath}', runtime: '{streamingOptions.AppCompatDirectory}'.",
-            isolationReady
-                ? null
-                : "Run scripts/Build-AppCompat.ps1, then scripts/Publish.ps1 and restart AgentSeat."));
-
         var serviceIdentity = WindowsIdentity.GetCurrent().IsSystem;
         checks.Add(new PreflightCheck(
             "session_launcher_identity",
-            "Cross-session process launcher",
+            "Seat helper service",
             serviceIdentity ? PreflightStatus.Pass : PreflightStatus.Warning,
             serviceIdentity
-                ? "AgentSeat runs as LocalSystem and can launch Sunshine with a friend's WTS user token."
-                : "AgentSeat can launch Sunshine only in its own current session in this console mode.",
-            serviceIdentity ? null : "Publish and install AgentSeat as its LocalSystem Windows service before using a friend's RDP session."));
-
-        using var vigemKey = Registry.LocalMachine.OpenSubKey(
-            @"SYSTEM\CurrentControlSet\Services\ViGEmBus");
-        var vigemInstalled = vigemKey is not null;
-        checks.Add(new PreflightCheck(
-            "gamepad_driver",
-            "Virtual gamepad support",
-            vigemInstalled ? PreflightStatus.Pass : PreflightStatus.Warning,
-            vigemInstalled
-                ? "ViGEmBus is installed; Moonlight controllers can be exposed to games."
-                : "ViGEmBus is not installed. Video, keyboard, and mouse still work, but Moonlight gamepads do not.",
-            vigemInstalled ? null : "Review and run scripts/Install-GamepadSupport.ps1 -Apply if controller support is required."));
+                ? "agent-seat can start its screen and input helper in the dedicated seat."
+                : "The service must be installed to start a helper in another Windows session.",
+            serviceIdentity ? null : "Install agent-seat with Install.ps1 before using its dedicated desktop."));
 
         var administrator = IsAdministrator();
         checks.Add(new PreflightCheck(
@@ -183,7 +126,7 @@ public sealed class WindowsHostInspector(SunshineStreamingOptions streamingOptio
                 "Dedicated seat accounts",
                 PreflightStatus.Warning,
                 "No seats are configured.",
-                "Create one dedicated local Windows account per remote friend, then add a seat."));
+                "Run Install.ps1 to create a dedicated local Windows account and AI seat."));
         }
         else
         {
@@ -209,7 +152,6 @@ public sealed class WindowsHostInspector(SunshineStreamingOptions streamingOptio
             }
         }
 
-        checks.RemoveAll(check => check.Code is "sunshine_template" or "steam_host" or "steam_isolation" or "gamepad_driver");
         return Task.FromResult(new PreflightReport(
             DateTimeOffset.UtcNow,
             Environment.MachineName,

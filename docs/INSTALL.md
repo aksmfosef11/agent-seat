@@ -4,7 +4,7 @@
 
 ## 첫 설치
 
-1. GitHub Releases에서 실행 파일 ZIP과 SHA256SUMS.txt를 내려받고 `Get-FileHash .\agent-seat-0.7.0-win-x64.zip -Algorithm SHA256` 결과를 비교합니다. ZIP을 `C:\agent-seat` 등에 압축 해제합니다.
+1. GitHub Releases에서 실행 파일 ZIP과 SHA256SUMS.txt를 내려받고 `Get-FileHash .\agent-seat-0.7.1-win-x64.zip -Algorithm SHA256` 결과를 비교합니다. ZIP을 `C:\agent-seat` 등에 압축 해제합니다.
 2. 64비트 관리자 PowerShell에서 해당 폴더로 이동해 `.\Install.ps1`으로 변경 계획을 확인합니다.
 3. Windows 클라이언트의 동시 세션 제한을 바꾸는 비공식 TermWrap 패치를 검토한 뒤 `.\Install.ps1 -Apply -IAcceptUnsupportedWindowsClientPatch`를 실행합니다. 정책이 다운로드한 스크립트를 막으면 검증한 파일에 한해 `Unblock-File`을 사용하세요. 조직에서 정한 정책은 관리자에게 확인하세요.
 4. 설치기는 별도 서비스, 표준 사용자 `agent-seat-user`, 숨은 로컬 RDP 앵커 작업, 승인 목록과 토큰을 만듭니다. 생성한 비밀번호는 화면이나 명령 인수에 표시하지 않고 DPAPI로 저장합니다.

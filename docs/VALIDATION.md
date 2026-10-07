@@ -1,6 +1,8 @@
-# 0.7.0 preview validation
+# 0.7.x preview validation
 
 Validation date: 2026-10-07. This is an experimental preview, not a stable release.
+
+0.7.1 removes the remaining gaming-related host checks and corrects the helper description. It uses the same seat protocol as 0.7.0; the development PC's installed service is still 0.7.0 pending administrator approval. Managed/UI checks were repeated for 0.7.1, and its packaged CLI can be checked against that installed service with `AGENTSEAT_CLI` set to the published executable.
 
 ## Completed
 

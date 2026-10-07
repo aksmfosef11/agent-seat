@@ -4,11 +4,11 @@ Give your AI a separate Windows desktop. Keep using your own screen while the AI
 
 AI용 독립 Windows 좌석입니다. CLI와 선택 사항인 MCP를 모두 지원하고, 브라우저에서 좌석 화면 확인과 직접 조작을 제공합니다. Sunshine, Moonlight, Steam, 게임패드 드라이버는 배포본에 포함하지 않습니다.
 
-**0.7.0 experimental preview.** The installer targets Windows 11 Pro/Enterprise/Education **x64** and requires administrator access. It uses an unsupported TermWrap modification for simultaneous sessions on Windows clients. Home and ARM64 are not supported by this installer. A clean-machine install has not yet been validated across Windows builds; review [validation and remaining checks](docs/VALIDATION.md) and [installation and recovery](docs/INSTALL.md) before applying it. Windows updates may require recovery or a dependency update.
+**0.7.1 experimental preview.** The installer targets Windows 11 Pro/Enterprise/Education **x64** and requires administrator access. It uses an unsupported TermWrap modification for simultaneous sessions on Windows clients. Home and ARM64 are not supported by this installer. A clean-machine install has not yet been validated across Windows builds; review [validation and remaining checks](docs/VALIDATION.md) and [installation and recovery](docs/INSTALL.md) before applying it. Windows updates may require recovery or a dependency update.
 
 ## Install a release
 
-1. Download `agent-seat-0.7.0-win-x64.zip` and `SHA256SUMS.txt` from [GitHub Releases](https://github.com/aksmfosef11/agent-seat/releases). A source-code ZIP alone does not contain built executables. If a release has not been published yet, build it below.
+1. Download `agent-seat-0.7.1-win-x64.zip` and `SHA256SUMS.txt` from [GitHub Releases](https://github.com/aksmfosef11/agent-seat/releases). A source-code ZIP alone does not contain built executables. If a release has not been published yet, build it below.
 2. Check the ZIP's SHA-256 with `Get-FileHash`, then extract it to a folder such as `C:\agent-seat`. The release includes the .NET runtime; end users do not need Visual Studio, Node.js, Git or a .NET SDK.
 3. Open **64-bit Windows PowerShell as Administrator**, go to the extracted folder, and review the dry run:
 
