@@ -1,7 +1,7 @@
-﻿# Public bootstrap: downloads only the requested release from aksmfosef11/agent-seat.
+# Public bootstrap: downloads only the requested release from aksmfosef11/agent-seat.
 [CmdletBinding()]
 param(
-    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+$')][string]$Version = '0.9.0',
+    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+$')][string]$Version = '0.9.1',
     [ValidatePattern('^[a-z][a-z0-9-]{0,31}$')][string]$SeatId = 'agent',
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$')][string]$UserName = 'agent-seat-user',
     [string]$DisplayName = 'AI Desktop',
@@ -92,6 +92,35 @@ function Assert-AgentSeatPackage {
     }
 }
 
+function Get-AgentSeatBootstrapText {
+    param([string]$Language)
+    # ASCII JSON escapes survive PowerShell 5.1 HTTP decoding without losing translations.
+    $translations = @'
+{
+  "ko": {
+    "download": "agent-seat {0} \ub2e4\uc6b4\ub85c\ub4dc \ubc0f \uac80\uc99d \uc911\u2026",
+    "verified": "\uac80\uc99d \uc644\ub8cc: {0}",
+    "saved": "\ub2e4\uc6b4\ub85c\ub4dc\ub9cc \uc644\ub8cc\ud588\uc2b5\ub2c8\ub2e4. \uc124\uce58\ud558\ub824\uba74 \ud3f4\ub354 \uc548\uc758 Install-AgentSeat.cmd\ub97c \uc2e4\ud589\ud558\uc138\uc694."
+  },
+  "zh": {
+    "download": "\u6b63\u5728\u4e0b\u8f7d\u5e76\u9a8c\u8bc1 agent-seat {0}\u2026",
+    "verified": "\u9a8c\u8bc1\u5b8c\u6210\uff1a{0}",
+    "saved": "\u4ec5\u5b8c\u6210\u4e0b\u8f7d\u3002\u5b89\u88c5\u8bf7\u8fd0\u884c\u6587\u4ef6\u5939\u4e2d\u7684 Install-AgentSeat.cmd\u3002"
+  },
+  "en": {
+    "download": "Downloading and verifying agent-seat {0}\u2026",
+    "verified": "Verified package: {0}",
+    "saved": "Download only. Run Install-AgentSeat.cmd in the folder to install."
+  }
+}
+'@ | ConvertFrom-Json
+    switch ($Language) {
+        'ko' { return $translations.ko }
+        'zh' { return $translations.zh }
+        default { return $translations.en }
+    }
+}
+
 function Invoke-AgentSeatBootstrap {
     param([string]$Version, [string]$SeatId, [string]$UserName, [string]$DisplayName, [string]$Language,
         [switch]$DownloadOnly, [switch]$Plan, [switch]$NoOpen, [switch]$IAcceptUnsupportedWindowsClientPatch)
@@ -101,11 +130,7 @@ function Invoke-AgentSeatBootstrap {
     $nativeArchitecture = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE
     if ($windows.EditionID -notmatch '^(Professional|Enterprise|Education)' -or [int]$windows.CurrentBuildNumber -lt 22000 -or $nativeArchitecture -ne 'AMD64') { throw 'Windows 11 Pro/Enterprise/Education x64 is required.' }
     $locale = if ($Language -eq 'auto') { [Globalization.CultureInfo]::CurrentUICulture.TwoLetterISOLanguageName } else { $Language }
-    $text = switch ($locale) {
-        'ko' { @{ download = 'agent-seat {0} 다운로드 및 검증 중…'; verified = '검증 완료: {0}'; saved = '다운로드만 완료했습니다. 설치하려면 폴더 안의 Install-AgentSeat.cmd를 실행하세요.' } }
-        'zh' { @{ download = '正在下载并验证 agent-seat {0}…'; verified = '验证完成：{0}'; saved = '仅完成下载。安装请运行文件夹中的 Install-AgentSeat.cmd。' } }
-        default { @{ download = 'Downloading and verifying agent-seat {0}…'; verified = 'Verified package: {0}'; saved = 'Download only. Run Install-AgentSeat.cmd in the folder to install.' } }
-    }
+    $text = Get-AgentSeatBootstrapText $locale
     [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
     $ProgressPreference = 'SilentlyContinue'
     $headers = @{ 'User-Agent' = 'agent-seat-installer'; Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2026-03-10' }

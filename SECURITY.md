@@ -12,6 +12,6 @@ Manual control uses the same checked action endpoint as the AI. It starts disabl
 
 The human viewer periodically captures the complete seat screen. Unlike the AI observation path, its images are not password-redacted. Treat the viewer as direct access to that Windows desktop. The existing UI Automation text path masks password controls; screenshot masking cannot reliably cover custom applications.
 
-TermWrap changes a shared Windows system component. The installer requires explicit opt-in, preserves an existing TermWrap installation, and refuses ambiguous coexistence configurations. Recovery must account for every application using that component. Do not run the dependency rollback to uninstall only agent-seat while SeatStream still uses it.
+TermWrap changes a shared Windows system component. The installer requires explicit opt-in, preserves an existing TermWrap installation, and refuses ambiguous coexistence configurations. Recovery must account for every application using that component. Do not run the dependency rollback to uninstall only agent-seat while another application still uses it.
 
 Report suspected vulnerabilities privately to the repository owner before including tokens, personal screenshots or repro logs in a public issue.

@@ -25,19 +25,29 @@ function New-FixtureArchive([string]$Name, [string[]]$Entries) {
     } finally { $archive.Dispose() }
     return $path
 }
+Check 'HTTP bootstrap parses in PowerShell 5.1 and preserves all three languages' {
+    $bytes = [IO.File]::ReadAllBytes((Join-Path $repoRoot 'Get-AgentSeat.ps1'))
+    if ($bytes | Where-Object { $_ -gt 127 }) { throw 'HTTP bootstrap must be ASCII without BOM' }
+    # GitHub raw text without a charset is decoded using a legacy encoding by Windows PowerShell.
+    $httpText = [Text.Encoding]::GetEncoding(28591).GetString($bytes)
+    . ([scriptblock]::Create($httpText))
+    if ((Get-AgentSeatBootstrapText 'ko').download -notlike '*다운로드*') { throw 'Korean translation lost' }
+    if ((Get-AgentSeatBootstrapText 'zh').download -notlike '*下载*') { throw 'Chinese translation lost' }
+    if ((Get-AgentSeatBootstrapText 'en').download -notlike '*Downloading*') { throw 'English translation lost' }
+}
 $zip = New-FixtureArchive 'good' @('nested/file.txt', 'hello.txt')
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
-$release = @{ tag_name = 'v0.9.0'; draft = $false; assets = @(
-    @{ name = 'agent-seat-0.9.0-win-x64.zip'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/agent-seat-0.9.0-win-x64.zip'; state = 'uploaded'; size = (Get-Item -LiteralPath $zip).Length; digest = "sha256:$hash" },
-    @{ name = 'SHA256SUMS.txt'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/SHA256SUMS.txt' }
+$release = @{ tag_name = 'v0.9.1'; draft = $false; assets = @(
+    @{ name = 'agent-seat-0.9.1-win-x64.zip'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/agent-seat-0.9.1-win-x64.zip'; state = 'uploaded'; size = (Get-Item -LiteralPath $zip).Length; digest = "sha256:$hash" },
+    @{ name = 'SHA256SUMS.txt'; browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/SHA256SUMS.txt' }
 ) }
 Check 'release assets are pinned to the exact public repository/tag' {
-    $script:asset = Get-AgentSeatReleaseAsset $release '0.9.0'
-    if ($asset.Name -ne 'agent-seat-0.9.0-win-x64.zip') { throw 'Wrong ZIP' }
+    $script:asset = Get-AgentSeatReleaseAsset $release '0.9.1'
+    if ($asset.Name -ne 'agent-seat-0.9.1-win-x64.zip') { throw 'Wrong ZIP' }
     Expect-Failure { Get-AgentSeatReleaseAsset $release '0.8.0' }
     $release.assets[0].browser_download_url = 'https://example.com/installer.zip'
-    Expect-Failure { Get-AgentSeatReleaseAsset $release '0.9.0' }
-    $release.assets[0].browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/agent-seat-0.9.0-win-x64.zip'
+    Expect-Failure { Get-AgentSeatReleaseAsset $release '0.9.1' }
+    $release.assets[0].browser_download_url = 'https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/agent-seat-0.9.1-win-x64.zip'
 }
 Check 'checksum parser accepts the intended ZIP and ignores other assets' {
     Assert-AgentSeatDownload $zip ("$hash  $($asset.Name)`r`n$hash  Install-AgentSeat.cmd`r`n") $asset
@@ -48,7 +58,7 @@ Check 'tampered bytes, conflicting checksums, metadata hashes and missing assets
     $asset.Zip.digest = 'sha256:' + ('0' * 64)
     Expect-Failure { Assert-AgentSeatDownload $zip ("$hash  $($asset.Name)") $asset }
     $asset.Zip.digest = "sha256:$hash"
-    Expect-Failure { Get-AgentSeatReleaseAsset @{ tag_name = 'v0.9.0'; assets = @() } '0.9.0' }
+    Expect-Failure { Get-AgentSeatReleaseAsset @{ tag_name = 'v0.9.1'; assets = @() } '0.9.1' }
 }
 Check 'normal archives extract into a new directory' {
     $destination = Join-Path $testRoot 'expanded-good'
@@ -72,16 +82,16 @@ Check 'package identity, complete manifest and tamper checks protect installer e
         $path = Join-Path $package $name; New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force | Out-Null
         [IO.File]::WriteAllText($path, 'fixture')
     }
-    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.0","runtime":"win-x64","selfContained":true}')
+    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.1","runtime":"win-x64","selfContained":true}')
     $manifest = @(Get-ChildItem -LiteralPath $package -File -Recurse | ForEach-Object { @{ path = $_.FullName.Substring($package.Length + 1); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash } })
     [IO.File]::WriteAllText((Join-Path $package 'manifest.json'), ($manifest | ConvertTo-Json))
-    Assert-AgentSeatPackage $package '0.9.0'
+    Assert-AgentSeatPackage $package '0.9.1'
     Expect-Failure { Assert-AgentSeatPackage $package '0.8.0' }
     [IO.File]::WriteAllText((Join-Path $package 'undeclared.txt'), 'fixture')
-    Expect-Failure { Assert-AgentSeatPackage $package '0.9.0' }
+    Expect-Failure { Assert-AgentSeatPackage $package '0.9.1' }
     Remove-Item -LiteralPath (Join-Path $package 'undeclared.txt')
     [IO.File]::WriteAllText((Join-Path $package 'Install.ps1'), 'tampered')
-    Expect-Failure { Assert-AgentSeatPackage $package '0.9.0' }
+    Expect-Failure { Assert-AgentSeatPackage $package '0.9.1' }
 }
 Check 'elevation preserves arbitrary display names as data rather than code' {
     $captureScript = Join-Path $testRoot "capture with ' quote.ps1"
@@ -100,7 +110,7 @@ function New-SetupFixture {
     foreach ($name in @('artifacts/publish/service/AgentSeat.exe', 'artifacts/publish/cli/agent-seat.exe')) {
         $path = Join-Path $package $name; New-Item -ItemType Directory -Path (Split-Path -Parent $path) -Force | Out-Null; [IO.File]::WriteAllText($path, 'fixture')
     }
-    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.0","runtime":"win-x64","selfContained":true}')
+    [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"product":"agent-seat","version":"0.9.1","runtime":"win-x64","selfContained":true}')
     $manifest = @(Get-ChildItem -LiteralPath $package -File -Recurse | ForEach-Object { @{ path = $_.FullName.Substring($package.Length + 1); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash } })
     [IO.File]::WriteAllText((Join-Path $package 'manifest.json'), ($manifest | ConvertTo-Json))
     return $package

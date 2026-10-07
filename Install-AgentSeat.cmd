@@ -9,7 +9,7 @@ if not exist "%~dp0manifest.json" goto download
 "%AGENTSEAT_WINDOWS_PS%" -NoProfile -ExecutionPolicy Bypass -File "%~dp0Setup-Seat.ps1"
 goto complete
 :download
-"%AGENTSEAT_WINDOWS_PS%" -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; & ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))"
+"%AGENTSEAT_WINDOWS_PS%" -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol=[Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12; & ([scriptblock]::Create((Invoke-RestMethod 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.1/Get-AgentSeat.ps1')))"
 :complete
 set "AGENTSEAT_SETUP_RESULT=%ERRORLEVEL%"
 if not "%AGENTSEAT_SETUP_RESULT%"=="0" (

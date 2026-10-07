@@ -23,7 +23,7 @@ AI에게 앱을 열고, 화면을 읽고, 데스크톱 작업을 수행할 공�
 
 기존 AI 에이전트에 Windows 작업 공간을 연결하거나, 앱 자동화를 실험하거나, AI 화면을 계속 앞에 띄워 두지 않고 작업을 감독할 때 사용할 수 있습니다. 이 프로젝트는 좌석과 조작 도구를 제공합니다. 이미지를 읽고 도구를 호출할 AI 에이전트나 모델 클라이언트는 사용자가 연결합니다.
 
-> **0.9.0 시험판입니다.** Windows 클라이언트의 동시 세션을 위해 비공식 TermWrap 수정을 사용합니다. Windows 업데이트로 호환성이 바뀔 수 있습니다. 다양한 Windows 빌드의 새 PC 설치와 재부팅·재로그인 검증은 남아 있습니다. 설치 전 [검증 기록](docs/VALIDATION.md)을 확인하세요.
+> **0.9.1 시험판입니다.** Windows 클라이언트의 동시 세션을 위해 비공식 TermWrap 수정을 사용합니다. Windows 업데이트로 호환성이 바뀔 수 있습니다. 다양한 Windows 빌드의 새 PC 설치와 재부팅·재로그인 검증은 남아 있습니다. 설치 전 [검증 기록](docs/VALIDATION.md)을 확인하세요.
 
 ## 주요 기능
 
@@ -57,7 +57,7 @@ flowchart LR
 
 ### 더블 클릭 설치
 
-[Install-AgentSeat.cmd 다운로드](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd) 후 더블 클릭하세요. 실행 파일 ZIP 다운로드, SHA-256 체크섬과 GitHub 파일 해시 확인, 압축 해제, 설치 시작까지 자동으로 진행합니다. 직접 압축을 풀거나 개발 도구를 설치할 필요가 없습니다.
+[Install-AgentSeat.cmd 다운로드](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/Install-AgentSeat.cmd) 후 더블 클릭하세요. 실행 파일 ZIP 다운로드, SHA-256 체크섬과 GitHub 파일 해시 확인, 압축 해제, 설치 시작까지 자동으로 진행합니다. 직접 압축을 풀거나 개발 도구를 설치할 필요가 없습니다.
 
 설치 계획을 확인하고 **INSTALL**을 입력해 비공식 Windows 클라이언트 수정에 동의한 뒤, 같은 Windows 소유자 계정으로 관리자 승인창을 확인하세요. 설치가 끝나면 좌석 화면이 읽기 전용으로 열립니다.
 
@@ -66,17 +66,17 @@ flowchart LR
 일반 소유자 계정에서 **64비트 Windows PowerShell**을 열고 실행하세요.
 
 ```powershell
-& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.1/Get-AgentSeat.ps1')))
 ```
 
 이 명령은 이 저장소의 버전이 지정된 [설치 시작 스크립트](Get-AgentSeat.ps1)를 내려받아 실행합니다. 같은 설치 계획과 관리자 승인 과정이 이어집니다. 설치 파일을 실행하기 전에 ZIP을 검증합니다.
 
 ### ZIP으로 오프라인 설치
 
-[Releases](https://github.com/aksmfosef11/agent-seat/releases)에서 **`agent-seat-0.9.0-win-x64.zip`**과 **`SHA256SUMS.txt`**를 받아 해시를 비교합니다. ZIP 압축을 풀고 안의 **`Install-AgentSeat.cmd`**를 더블 클릭하면 추가 다운로드 없이 설치합니다.
+[Releases](https://github.com/aksmfosef11/agent-seat/releases)에서 **`agent-seat-0.9.1-win-x64.zip`**과 **`SHA256SUMS.txt`**를 받아 해시를 비교합니다. ZIP 압축을 풀고 안의 **`Install-AgentSeat.cmd`**를 더블 클릭하면 추가 다운로드 없이 설치합니다.
 
 ```powershell
-Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256
+Get-FileHash .\agent-seat-0.9.1-win-x64.zip -Algorithm SHA256
 ```
 
 GitHub가 자동 생성하는 소스 코드 압축 파일에는 실행 파일이 없습니다. 일반 사용자는 Visual Studio, Node.js, Git, .NET SDK를 설치할 필요가 없습니다.

@@ -23,7 +23,7 @@ AI 需要一个打开应用、读取屏幕并执行桌面任务的工作空间�
 
 你可以为现有 AI 代理提供 Windows 工作空间、探索应用自动化，或在不持续显示 AI 屏幕的情况下监督任务。本项目提供桌面和操作工具；能够读取图像并调用工具的代理或模型客户端由你自行连接。
 
-> **0.9.0 实验预览版。** 安装器使用非官方 TermWrap 修改来启用 Windows 客户端的并发会话。Windows 更新可能影响兼容性。不同 Windows 版本的新机器安装、重启及重新登录仍未完成验证。安装前请查看[验证记录](docs/VALIDATION.md)。
+> **0.9.1 实验预览版。** 安装器使用非官方 TermWrap 修改来启用 Windows 客户端的并发会话。Windows 更新可能影响兼容性。不同 Windows 版本的新机器安装、重启及重新登录仍未完成验证。安装前请查看[验证记录](docs/VALIDATION.md)。
 
 ## 主要功能
 
@@ -57,7 +57,7 @@ flowchart LR
 
 ### 双击安装
 
-[下载 Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd)，然后双击。它会下载可执行 ZIP，验证 SHA-256 校验和与 GitHub 文件摘要，解压并启动安装。无需手动解压或安装开发工具。
+[下载 Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/Install-AgentSeat.cmd)，然后双击。它会下载可执行 ZIP，验证 SHA-256 校验和与 GitHub 文件摘要，解压并启动安装。无需手动解压或安装开发工具。
 
 查看安装计划，输入 **INSTALL** 接受非官方 Windows 客户端修改，然后使用同一 Windows 所有者账户确认管理员授权。安装完成后，席位查看器会以只读模式打开。
 
@@ -66,17 +66,17 @@ flowchart LR
 使用普通所有者账户打开 **64 位 Windows PowerShell**，运行：
 
 ```powershell
-& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.1/Get-AgentSeat.ps1')))
 ```
 
 此命令下载并执行本仓库的指定版本[引导脚本](Get-AgentSeat.ps1)，随后显示相同的安装计划及管理员授权提示。引导脚本会先验证 ZIP，再运行安装器。
 
 ### ZIP 离线安装
 
-从 [Releases](https://github.com/aksmfosef11/agent-seat/releases) 下载 **`agent-seat-0.9.0-win-x64.zip`** 和 **`SHA256SUMS.txt`**，对比哈希，解压 ZIP 后双击其中的 **`Install-AgentSeat.cmd`**。此方式使用本地文件，不会再次下载。
+从 [Releases](https://github.com/aksmfosef11/agent-seat/releases) 下载 **`agent-seat-0.9.1-win-x64.zip`** 和 **`SHA256SUMS.txt`**，对比哈希，解压 ZIP 后双击其中的 **`Install-AgentSeat.cmd`**。此方式使用本地文件，不会再次下载。
 
 ```powershell
-Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256
+Get-FileHash .\agent-seat-0.9.1-win-x64.zip -Algorithm SHA256
 ```
 
 GitHub 自动生成的源码压缩包不包含可执行程序。普通用户无需安装 Visual Studio、Node.js、Git 或 .NET SDK。

@@ -1,6 +1,6 @@
 # Agent control architecture
 
-The loopback service on port 38399 stores seat definitions under `%ProgramData%\agent-seat`. Each seat identifies a dedicated standard Windows account. The installer creates a hidden local RDP anchor task owned by the interactive installing user. The Windows service is `agent-seat`, installed separately from SeatStream.
+The loopback service on port 38399 stores seat definitions under `%ProgramData%\agent-seat`. Each seat identifies a dedicated standard Windows account. The installer creates a hidden local RDP anchor task owned by the interactive installing user. The Windows service is `agent-seat`.
 
 The agent API checks a protected bearer token and an administrator-controlled seat ID/account allowlist. It refuses the physical console. An `AgentSeat.AgentHelper` process runs within the seat's own WTS session, captures its desktop and injects input there. A named pipe specific to agent-seat verifies the peer process and permits only the authorized service identity. Session IDs, executable paths and process identity are checked before a helper is used or terminated.
 
@@ -10,4 +10,4 @@ The browser viewer redeems a one-use ticket into a seat-specific cookie, capture
 
 Game streaming is registered as a disabled implementation. The service does not register the gaming auto-start or virtual gamepad isolation worker. Release packaging builds only service, CLI, RDP anchor and agent helper; it excludes Sunshine, Steam launchers, native AppCompat and device drivers.
 
-Windows Terminal Services and any installed TermWrap modification are shared host components. agent-seat reuses existing TermWrap without replacing it or restarting that service. Application/service/data/token/task/helper names and the default Windows seat user are distinct from SeatStream. Shared RDP recovery remains a separate host operation; see [INSTALL.md](INSTALL.md).
+Windows Terminal Services and any installed TermWrap modification are shared host components. agent-seat reuses existing TermWrap without replacing it or restarting that service. Shared RDP recovery remains a separate host operation; see [INSTALL.md](INSTALL.md).

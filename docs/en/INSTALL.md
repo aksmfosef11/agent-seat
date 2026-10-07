@@ -6,25 +6,25 @@ The preview installer targets Windows 11 Pro/Enterprise/Education x64. It does n
 
 ## Guided installation
 
-Download [Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.0/Install-AgentSeat.cmd) and double-click it, or use one command in 64-bit Windows PowerShell:
+Download [Install-AgentSeat.cmd](https://github.com/aksmfosef11/agent-seat/releases/download/v0.9.1/Install-AgentSeat.cmd) and double-click it, or use one command in 64-bit Windows PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1')))
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.1/Get-AgentSeat.ps1')))
 ```
 
-The download is pinned to 0.9.0. The bootstrap validates the ZIP's size, SHA-256 checksum and GitHub digest; checks every archive path; verifies the extracted manifest; then starts setup. Review the plan, type INSTALL to accept the unsupported TermWrap change and approve UAC using the same interactive owner account. After installation the normal owner process opens the viewer read-only. Administrator access under a different Windows account is refused before installation.
+The download is pinned to 0.9.1. The bootstrap validates the ZIP's size, SHA-256 checksum and GitHub digest; checks every archive path; verifies the extracted manifest; then starts setup. Review the plan, type INSTALL to accept the unsupported TermWrap change and approve UAC using the same interactive owner account. After installation the normal owner process opens the viewer read-only. Administrator access under a different Windows account is refused before installation.
 
 The guided setup messages follow Windows' UI language (English, Korean or Simplified Chinese). Use `-Language en`, `ko` or `zh` to select one. Detailed backend diagnostics stay in English. Windows security prompts are handled by the user. These preview scripts are not code-signed; review the source and download origin before running them. The launcher uses a process-only execution policy and does not change machine or organization policy.
 
 Download without installing or requesting administrator access:
 
 ```powershell
-& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.0/Get-AgentSeat.ps1'))) -DownloadOnly
+& ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.1/Get-AgentSeat.ps1'))) -DownloadOnly
 ```
 
 The verified ZIP and extracted files are retained under `%LOCALAPPDATA%\agent-seat\Downloads\<unique folder>`. For a downloaded ZIP, run `Setup-Seat.ps1 -Plan` to review without host changes, or `Setup-Seat.ps1 -NoOpen` to install without opening the viewer. When a seat is already configured, setup keeps it and can open its viewer. It does not upgrade existing service files. A stopped or partially installed service is left for diagnosis rather than replaced.
 
-For a completely offline installation, download the ZIP and SHA256SUMS.txt, compare `Get-FileHash .\agent-seat-0.9.0-win-x64.zip -Algorithm SHA256`, extract and double-click its Install-AgentSeat.cmd. No bootstrap download is needed. If verified downloaded scripts are blocked, use `Unblock-File` on those files only; preserve organization policy.
+For a completely offline installation, download the ZIP and SHA256SUMS.txt, compare `Get-FileHash .\agent-seat-0.9.1-win-x64.zip -Algorithm SHA256`, extract and double-click its Install-AgentSeat.cmd. No bootstrap download is needed. If verified downloaded scripts are blocked, use `Unblock-File` on those files only; preserve organization policy.
 
 The low-level installer remains available in Administrator PowerShell for automation:
 
