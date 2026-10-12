@@ -26,7 +26,7 @@ Do not try to click UAC yourself. Do not change system security settings such as
 ## 2. Download the package and review the plan (no changes)
 
 ```powershell
-$package = & ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.2/Get-AgentSeat.ps1'))) -DownloadOnly
+$package = & ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.3/Get-AgentSeat.ps1'))) -DownloadOnly
 & "$package\Setup-Seat.ps1" -Plan -NoOpen
 ```
 

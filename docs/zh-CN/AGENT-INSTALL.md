@@ -26,7 +26,7 @@
 ## 2. 下载安装包并确认计划（不做任何更改）
 
 ```powershell
-$package = & ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.2/Get-AgentSeat.ps1'))) -DownloadOnly
+$package = & ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.3/Get-AgentSeat.ps1'))) -DownloadOnly
 & "$package\Setup-Seat.ps1" -Plan -NoOpen
 ```
 

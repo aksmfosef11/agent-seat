@@ -26,7 +26,7 @@ UAC를 AI가 직접 누르려고 하지 마세요. UAC·실행 정책 같은 시
 ## 2. 패키지를 내려받고 계획 확인 (변경 없음)
 
 ```powershell
-$package = & ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.2/Get-AgentSeat.ps1'))) -DownloadOnly
+$package = & ([scriptblock]::Create((irm 'https://raw.githubusercontent.com/aksmfosef11/agent-seat/v0.9.3/Get-AgentSeat.ps1'))) -DownloadOnly
 & "$package\Setup-Seat.ps1" -Plan -NoOpen
 ```
 
