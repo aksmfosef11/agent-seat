@@ -15,6 +15,9 @@
 
 </div>
 
+<p align="center"><img src="assets/agent-seat-demo.gif" alt="AI가 자신의 Windows 세션 안에서 메모를 쓰고 계산을 실행합니다." width="800"></p>
+<p align="center"><sub>AI 좌석에서 CLI로 직접 캡처했습니다. 소유자의 데스크톱은 관여하지 않습니다.</sub></p>
+
 ## 왜 agent-seat인가요?
 
 AI에게 앱을 열고, 화면을 읽고, 데스크톱 작업을 수행할 공간이 필요합니다. 그동안 나도 컴퓨터를 계속 쓸 수 있어야 합니다.

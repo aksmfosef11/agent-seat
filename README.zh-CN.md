@@ -15,6 +15,9 @@
 
 </div>
 
+<p align="center"><img src="assets/agent-seat-demo.gif" alt="AI 在它自己的 Windows 会话中写笔记并进行计算。" width="800"></p>
+<p align="center"><sub>通过 CLI 直接从 AI 席位截取。所有者的桌面不参与其中。</sub></p>
+
 ## 为什么使用 agent-seat？
 
 AI 需要一个打开应用、读取屏幕并执行桌面任务的工作空间。同时，你也需要继续使用自己的电脑。

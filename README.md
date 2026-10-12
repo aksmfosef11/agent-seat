@@ -15,6 +15,9 @@
 
 </div>
 
+<p align="center"><img src="assets/agent-seat-demo.gif" alt="An AI writes a note and runs a calculation inside its own Windows session." width="800"></p>
+<p align="center"><sub>Captured from the AI seat itself through the CLI. The owner's desktop is not involved.</sub></p>
+
 ## Why agent-seat?
 
 Your agent needs a place to open apps, read screens and carry out desktop tasks. You still need a computer you can use.
