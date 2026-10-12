@@ -39,7 +39,7 @@ foreach ($file in @('Install.ps1', 'Get-AgentSeat.ps1', 'Setup-Seat.ps1', 'Insta
 New-Item -ItemType Directory -Path (Join-Path $stage 'assets') -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $root 'assets\agent-seat-banner.svg') -Destination (Join-Path $stage 'assets')
 foreach ($file in @('Install-MultiSession.ps1', 'Restore-MultiSession.ps1', 'Enable-AgentControl.ps1', 'AgentSeat-Installation.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $stage 'scripts') }
-foreach ($file in @('INSTALL.md', 'AGENT-USAGE.md', 'AGENT-MCP.md', 'VALIDATION.md', 'LOCALIZATION.md', 'AGENT-CONTROL.md', 'RELEASING.md')) { Copy-Item -LiteralPath (Join-Path $root "docs\$file") -Destination (Join-Path $stage 'docs') }
+foreach ($file in @('INSTALL.md', 'AGENT-INSTALL.md', 'AGENT-USAGE.md', 'AGENT-MCP.md', 'VALIDATION.md', 'LOCALIZATION.md', 'AGENT-CONTROL.md', 'RELEASING.md')) { Copy-Item -LiteralPath (Join-Path $root "docs\$file") -Destination (Join-Path $stage 'docs') }
 foreach ($locale in @('en', 'zh-CN')) { Copy-Item -LiteralPath (Join-Path $root "docs\$locale") -Destination (Join-Path $stage "docs\$locale") -Recurse }
 $stagePrefix = [IO.Path]::GetFullPath($stage).TrimEnd('\') + '\'
 foreach ($symbol in Get-ChildItem -LiteralPath $stage -Recurse -File -Filter '*.pdb') {

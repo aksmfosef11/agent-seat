@@ -71,6 +71,8 @@ Open **64-bit Windows PowerShell** under your ordinary installing owner account 
 
 This downloads and executes the versioned [bootstrap script](Get-AgentSeat.ps1) from this repository. The same installation review and Windows administrator prompt follow. The bootstrap checks the ZIP before running its installer.
 
+To let your AI install it, give it the [AI-run installation guide](docs/en/AGENT-INSTALL.md). It lists the administrator-access and consent steps the AI must hand back to you.
+
 ### Offline ZIP installation
 
 Download **`agent-seat-0.9.2-win-x64.zip`** and **`SHA256SUMS.txt`** from [Releases](https://github.com/aksmfosef11/agent-seat/releases), compare the hash, then extract the ZIP and double-click its **`Install-AgentSeat.cmd`**. This path uses the local package without another download.
@@ -150,6 +152,7 @@ Reports with a Windows edition/build and clear reproduction steps help most. Rem
 | Install & recovery | [Guide](docs/en/INSTALL.md) | [안내](docs/INSTALL.md) | [指南](docs/zh-CN/INSTALL.md) |
 | CLI workflow | [Guide](docs/en/AGENT-USAGE.md) | [안내](docs/AGENT-USAGE.md) | [指南](docs/zh-CN/AGENT-USAGE.md) |
 | Optional MCP | [Guide](docs/en/AGENT-MCP.md) | [안내](docs/AGENT-MCP.md) | [指南](docs/zh-CN/AGENT-MCP.md) |
+| AI-run install | [Guide](docs/en/AGENT-INSTALL.md) | [안내](docs/AGENT-INSTALL.md) | [指南](docs/zh-CN/AGENT-INSTALL.md) |
 
 [Security](SECURITY.md) · [Validation](docs/VALIDATION.md) · [Architecture](docs/AGENT-CONTROL.md)
 

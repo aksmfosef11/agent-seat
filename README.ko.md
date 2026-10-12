@@ -71,6 +71,8 @@ flowchart LR
 
 이 명령은 이 저장소의 버전이 지정된 [설치 시작 스크립트](Get-AgentSeat.ps1)를 내려받아 실행합니다. 같은 설치 계획과 관리자 승인 과정이 이어집니다. 설치 파일을 실행하기 전에 ZIP을 검증합니다.
 
+AI에게 설치를 맡기려면 [AI 설치 안내](docs/AGENT-INSTALL.md)를 전달하세요. 관리자 권한 확인과 사용자 동의처럼 AI가 사용자에게 넘겨야 하는 단계가 정리되어 있습니다.
+
 ### ZIP으로 오프라인 설치
 
 [Releases](https://github.com/aksmfosef11/agent-seat/releases)에서 **`agent-seat-0.9.2-win-x64.zip`**과 **`SHA256SUMS.txt`**를 받아 해시를 비교합니다. ZIP 압축을 풀고 안의 **`Install-AgentSeat.cmd`**를 더블 클릭하면 추가 다운로드 없이 설치합니다.
@@ -150,6 +152,7 @@ powershell -NoProfile -File tests/installer/bootstrap.tests.ps1
 | 설치·복구 | [Guide](docs/en/INSTALL.md) | [안내](docs/INSTALL.md) | [指南](docs/zh-CN/INSTALL.md) |
 | CLI | [Guide](docs/en/AGENT-USAGE.md) | [안내](docs/AGENT-USAGE.md) | [指南](docs/zh-CN/AGENT-USAGE.md) |
 | 선택 사항인 MCP | [Guide](docs/en/AGENT-MCP.md) | [안내](docs/AGENT-MCP.md) | [指南](docs/zh-CN/AGENT-MCP.md) |
+| AI가 직접 설치 | [Guide](docs/en/AGENT-INSTALL.md) | [안내](docs/AGENT-INSTALL.md) | [指南](docs/zh-CN/AGENT-INSTALL.md) |
 
 [보안](SECURITY.md) · [검증 기록](docs/VALIDATION.md) · [구조](docs/AGENT-CONTROL.md)
 

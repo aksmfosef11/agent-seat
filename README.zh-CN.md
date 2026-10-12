@@ -71,6 +71,8 @@ flowchart LR
 
 此命令下载并执行本仓库的指定版本[引导脚本](Get-AgentSeat.ps1)，随后显示相同的安装计划及管理员授权提示。引导脚本会先验证 ZIP，再运行安装器。
 
+如果想让 AI 代为安装，请把 [AI 安装说明](docs/zh-CN/AGENT-INSTALL.md)交给它。其中列出了 AI 必须交还给你的管理员权限和同意步骤。
+
 ### ZIP 离线安装
 
 从 [Releases](https://github.com/aksmfosef11/agent-seat/releases) 下载 **`agent-seat-0.9.2-win-x64.zip`** 和 **`SHA256SUMS.txt`**，对比哈希，解压 ZIP 后双击其中的 **`Install-AgentSeat.cmd`**。此方式使用本地文件，不会再次下载。
@@ -150,6 +152,7 @@ powershell -NoProfile -File tests/installer/bootstrap.tests.ps1
 | 安装与恢复 | [Guide](docs/en/INSTALL.md) | [안내](docs/INSTALL.md) | [指南](docs/zh-CN/INSTALL.md) |
 | CLI | [Guide](docs/en/AGENT-USAGE.md) | [안내](docs/AGENT-USAGE.md) | [指南](docs/zh-CN/AGENT-USAGE.md) |
 | 可选 MCP | [Guide](docs/en/AGENT-MCP.md) | [안내](docs/AGENT-MCP.md) | [指南](docs/zh-CN/AGENT-MCP.md) |
+| 由 AI 安装 | [Guide](docs/en/AGENT-INSTALL.md) | [안내](docs/AGENT-INSTALL.md) | [指南](docs/zh-CN/AGENT-INSTALL.md) |
 
 [安全](SECURITY.md) · [验证](docs/VALIDATION.md) · [架构](docs/AGENT-CONTROL.md)
 
