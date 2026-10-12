@@ -155,7 +155,7 @@ internal static class AgentSeatCli
         using var response = await client.PostAsJsonAsync("seats", payload, JsonOptions);
         await EnsureSuccessAsync(response);
         Console.WriteLine(agent
-            ? $"Created agent seat '{id}'. Install its Windows account and anchor with scripts\\Install-DuoSeat.ps1 -AgentSeat, then run: agent-seat computer guide"
+            ? $"Registered agent seat '{id}' (definition only: no Windows account or RDP anchor was created). To create them, run 'agent-seat remove {id} --yes', then '.\\Setup-Seat.ps1 -SeatId {id} -UserName {user}' from the release folder. Then run: agent-seat computer guide"
             : $"Created seat '{id}'.");
         return 0;
     }
