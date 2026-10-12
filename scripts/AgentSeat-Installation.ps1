@@ -6,6 +6,14 @@ function Get-AgentSeatRdpPort {
     return [int]$port
 }
 
+function Get-AgentSeatApiList {
+    param([string]$Uri, [int]$TimeoutSec = 5)
+    # Windows PowerShell 5.1 sends a JSON array down the pipeline as ONE object, so `Invoke-RestMethod ... | Where-Object`
+    # would see the whole array as $_. Capture it first; a function's output is enumerated, so callers get one item per element.
+    $items = Invoke-RestMethod $Uri -TimeoutSec $TimeoutSec
+    $items
+}
+
 function Test-AgentSeatAdministrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
     return (-not $identity.IsSystem -and [Security.Principal.WindowsPrincipal]::new($identity).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
@@ -131,7 +139,7 @@ function Get-AgentSeatInstallationStatus {
         Assert-AgentSeatManagedTask $task $installRoot $ownerSid
         $actions = @($task.Actions)
         $expectedArguments = 'run --seat {0} --root "{1}"' -f $SeatId, (Split-Path -Parent $directory)
-        if ($task.Principal.LogonType -notin @('Interactive', 'InteractiveToken') -or $task.Principal.RunLevel -ne 'Limited' -or @($task.Triggers).Count -ne 0 -or $actions[0].Arguments -cne $expectedArguments -or -not (Test-Path -LiteralPath $actions[0].Execute)) { $issues.Add('RDP anchor task needs repair.') }
+        if ($task.Principal.LogonType -notin @('Interactive', 'InteractiveToken') -or $task.Principal.RunLevel -ne 'Limited' -or @($task.Triggers | Where-Object { $null -ne $_ }).Count -ne 0 -or $actions[0].Arguments -cne $expectedArguments -or -not (Test-Path -LiteralPath $actions[0].Execute)) { $issues.Add('RDP anchor task needs repair.') }
     }
     if ($state -and -not $state.complete) { $issues.Add('The recorded installation is incomplete.') }
     return @{ Ready = ($issues.Count -eq 0); Issues = $issues.ToArray(); State = $state }

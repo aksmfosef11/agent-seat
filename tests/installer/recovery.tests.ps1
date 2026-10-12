@@ -2,6 +2,7 @@
 $ErrorActionPreference = 'Stop'
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 . (Join-Path $repoRoot 'Install.ps1')
+$script:realWaitSession = ${function:Wait-AgentSeatSession}
 $testRoot = Join-Path $repoRoot ('artifacts\recovery-tests-' + [Guid]::NewGuid().ToString('N'))
 [IO.Directory]::CreateDirectory($testRoot) | Out-Null
 $originalProgramFiles = $env:ProgramFiles; $originalProgramData = $env:ProgramData
@@ -23,7 +24,7 @@ function New-Harness {
     [IO.File]::WriteAllText((Join-Path $package 'scripts/Install-MultiSession.ps1'), 'param($TermWrapPath,[switch]$Apply,[switch]$IAcceptUnsupportedWindowsClientPatch) $global:h.PatchCalls++; $global:h.SharedRdp = $true')
     [IO.File]::WriteAllText((Join-Path $package 'scripts/Enable-AgentControl.ps1'), 'param($AllowSeat,$AllowUser,[switch]$Apply) $global:h.AllowCalls++')
     [IO.File]::WriteAllText((Join-Path $package 'release.json'), '{"version":"0.9.2"}')
-    $global:h = @{ Package = $package; Port = 3397; Service = $null; Account = $null; Task = $null; Seat = $null; SharedRdp = $false; PatchCalls = 0; AllowCalls = 0; Creates = 0; PasswordHash = $null; TaskRegisters = 0; Stops = 0; Disabled = 0; Fail = ''; BootSession = $null; ServiceStarts = 0; NewPasswordNeverExpires = $false }
+    $global:h = @{ Package = $package; Port = 3397; Service = $null; Account = $null; Task = $null; Seat = $null; SharedRdp = $false; PatchCalls = 0; AllowCalls = 0; Creates = 0; PasswordHash = $null; TaskRegisters = 0; Stops = 0; Disabled = 0; Fail = ''; Others = @(); BootSession = $null; ServiceStarts = 0; NewPasswordNeverExpires = $false }
     return $package
 }
 function Test-AgentSeatAdministrator { return $true }
@@ -72,7 +73,7 @@ function New-ScheduledTaskSettingsSet { return @{} }
 function Register-ScheduledTask {
     param($TaskName,$Action,$Principal,$Settings,[switch]$Force)
     if ($global:h.Fail -eq 'seat-registered') { throw 'Simulated failure registering the anchor task' }
-    $global:h.TaskRegisters++; $global:h.Task = @{ Actions = @($Action); Principal = $Principal; Triggers = @(); State = 'Ready' }
+    $global:h.TaskRegisters++; $global:h.Task = @{ Actions = @($Action); Principal = $Principal; Triggers = $null; State = 'Ready' }   # a trigger-less task reports $null on Windows
 }
 function Start-ScheduledTask { param($TaskName) $global:h.Task.State = 'Running' }
 function Disable-ScheduledTask { param($TaskName) $global:h.Disabled++; $global:h.Task.State = 'Disabled' }
@@ -84,7 +85,9 @@ function Invoke-RestMethod {
         return @{ mode = 'agent-seat'; version = '0.9.2' }
     }
     if ($Method -in @('Post','Put')) { $global:h.Seat = [Text.Encoding]::UTF8.GetString($Body) | ConvertFrom-Json; return $global:h.Seat }
-    if ($Uri.EndsWith('/seats') -and $global:h.Seat) { return @{ seat = $global:h.Seat } }
+    # Windows PowerShell 5.1 emits a JSON array as a single pipeline object; the comma operator reproduces that.
+    if ($Uri.EndsWith('/seats')) { return ,@(@($global:h.Others) + $(if ($global:h.Seat) { @{ seat = $global:h.Seat } })) }
+    if ($Uri.EndsWith('/sessions')) { return ,@($global:h.Sessions) }
     return @()
 }
 function Set-AgentSeatAnchorConfiguration {
@@ -193,6 +196,34 @@ try {
         New-Item -ItemType Junction -Path $link -Target $dir | Out-Null
         Expect-Failure { New-AgentSeatProtectedDirectory (Join-Path $link 'must-not-exist') ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value) }
         if (Test-Path -LiteralPath (Join-Path $dir 'must-not-exist')) { throw 'Protected directory followed a junction' }
+    }
+    Check 'the real session wait matches the API array response like Windows PowerShell 5.1 delivers it' {
+        $package = New-Harness
+        $global:h.Sessions = @(
+            [pscustomobject]@{ sessionId = 1; userName = 'owner'; state = 'active' },
+            [pscustomobject]@{ sessionId = 8; userName = 'agent-seat-user'; state = 'active' })
+        $found = & $script:realWaitSession 'http://127.0.0.1:38399/api/v1' 'agent-seat-user'
+        if ($found.sessionId -ne 8) { throw 'Live seat session was not found in the sessions array' }
+        $global:h.Sessions = @([pscustomobject]@{ sessionId = 8; userName = 'agent-seat-user'; state = 'active' })
+        if ((& $script:realWaitSession 'http://127.0.0.1:38399/api/v1' 'agent-seat-user').sessionId -ne 8) { throw 'A single-element sessions array was not matched' }
+    }
+    Check 'an additional seat installs and repairs while another seat is registered' {
+        $package = New-Harness
+        $global:h.Others = @(@{ seat = [pscustomobject]@{ id = 'other'; userName = 'other-user' } })
+        Invoke-AgentSeatInstall $package $options
+        Invoke-AgentSeatInstall $package $options
+        if (-not (Get-AgentSeatInstallationStatus 'agent' 'agent-seat-user').Ready) { throw 'Additional seat did not finish' }
+        if ($global:h.Creates -ne 1) { throw 'Repair created a second account' }
+    }
+    Check 'installer resolution limits never admit a size the seat service rejects after the account exists' {
+        $rule = [IO.File]::ReadAllText((Join-Path $repoRoot 'src\AgentSeat.Core\Services\SeatManager.cs'))
+        if ($rule -notmatch 'seat\.Width is < (\d+) or > \d+ \|\| seat\.Height is < (\d+) or > \d+') { throw 'Seat resolution rule moved; update this check' }
+        $minimum = @{ Width = [int]$Matches[1]; Height = [int]$Matches[2] }
+        $parameters = (Get-Command (Join-Path $repoRoot 'Install.ps1')).Parameters
+        foreach ($name in $minimum.Keys) {
+            $range = $parameters[$name].Attributes | Where-Object { $_ -is [Management.Automation.ValidateRangeAttribute] }
+            if ($range.MinRange -lt $minimum[$name]) { throw "Install.ps1 -$name accepts $($range.MinRange), below the service minimum $($minimum[$name])" }
+        }
     }
 } finally { $env:ProgramFiles = $originalProgramFiles; $env:ProgramData = $originalProgramData }
 Write-Host "Recovery checks passed: $script:passed (Windows PowerShell $($PSVersionTable.PSVersion))"

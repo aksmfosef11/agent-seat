@@ -3,8 +3,8 @@ param(
     [ValidatePattern('^[a-z][a-z0-9-]{0,31}$')][string]$SeatId = 'agent',
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$')][string]$UserName = 'agent-seat-user',
     [string]$DisplayName = 'AI Desktop',
-    [ValidateRange(640, 3840)][int]$Width = 1280,
-    [ValidateRange(480, 2160)][int]$Height = 800,
+    [ValidateRange(800, 3840)][int]$Width = 1280,
+    [ValidateRange(600, 2160)][int]$Height = 800,
     [switch]$Apply,
     [switch]$IAcceptUnsupportedWindowsClientPatch
 )
@@ -13,8 +13,9 @@ param(
 function Wait-AgentSeatSession {
     param([string]$ApiRoot, [string]$UserName)
     $deadline = [DateTimeOffset]::UtcNow.AddSeconds(90)
+    Write-Host "Waiting up to 90 seconds for the '$UserName' desktop session to connect..."
     do {
-        $session = Invoke-RestMethod "$ApiRoot/sessions" -TimeoutSec 5 | Where-Object { $_.userName -ieq $UserName -and $_.state -in @('active', 'connected', 'shadow') } | Select-Object -First 1
+        $session = Get-AgentSeatApiList "$ApiRoot/sessions" | Where-Object { $_.userName -ieq $UserName -and $_.state -in @('active', 'connected', 'shadow') } | Select-Object -First 1
         if ($session) { return $session }
         Start-Sleep -Milliseconds 500
     } while ([DateTimeOffset]::UtcNow -lt $deadline)
@@ -115,7 +116,7 @@ function Invoke-AgentSeatInstall {
             Assert-AgentSeatServicePath $installRoot
             if ($service.Status -ne 'Running') { Start-Service $serviceName }
             $health = Wait-AgentSeatHealth $apiRoot
-            $views = @(Invoke-RestMethod "$apiRoot/seats" -TimeoutSec 5)
+            $views = @(Get-AgentSeatApiList "$apiRoot/seats")
             $matchingSeats = @($views | Where-Object { $_.seat.id -ceq $seatId } | ForEach-Object { $_.seat })
             if ($matchingSeats.Count -gt 1) { throw 'Duplicate seat identity.' }
             $existingSeat = $matchingSeats | Select-Object -First 1
