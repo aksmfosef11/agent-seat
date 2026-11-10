@@ -23,6 +23,10 @@ $cli = "$env:ProgramFiles\agent-seat\cli\agent-seat.exe"
 
 `observe` 返回有限的 UI Automation 文本，包括元素、位置、焦点及值。密码控件会被隐藏，无响应的提供程序会超时。画布、图表或布局无法通过文本判断时，请使用 `screenshot` 或 `zoom X Y W H`。CLI 的 `observe` 本身不包含图像。
 
+`targets[].index` 对应 UI 文本中的行号。使用近期观察返回的 `ref` 和目标支持的动作。`computer invoke REF` 激活按钮，`computer set-value REF TEXT` 替换输入框的值。引用过期或目标窗口发生变化时，请重新观察。对于复杂窗口，可先运行 `computer observe --interactive-only --max-depth 2`，再用 `computer observe --root REF` 展开标有 `canExpand` 的目标。
+
+`computer wait-for --title '另存为' --timeout 5000` 等待匹配的窗口。也可用 `--window HANDLE` 指定窗口，并通过 `--role Button --name 保存` 等待其中的元素。标题和名称采用不区分大小写的精确匹配。批处理中使用 `wait_for`，提供 `windowTitle` 或 `handle`，可选参数为 `role`、`name` 和 `milliseconds`。超时会停止后续步骤，先前的输入结果仍保留在 `results` 中。
+
 后续截图若返回 `changed:false`，可以复用上一张图像。有 `changes[].path` 时先查看变化区域截图。将区域的 x/y 原点加到截图坐标上，得到全屏坐标；缩放后的图像坐标也需要换算回原屏幕。
 
 明确可靠的操作可以通过 `computer act --file <json-file>` 或标准输入 JSON 批量发送：

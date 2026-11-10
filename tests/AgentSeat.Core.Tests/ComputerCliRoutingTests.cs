@@ -159,6 +159,10 @@ public sealed class ComputerCliRoutingTests
     [InlineData("release", "\"type\":\"release\"}")]
     [InlineData("zoom 1 2 30 40", "\"type\":\"zoom\",\"x\":1,\"y\":2,\"width\":30,\"height\":40")]
     [InlineData("key Down --repeat 5", "\"type\":\"key\",\"keys\":\"Down\",\"repeat\":5")]
+    [InlineData("observe --window 42 --interactive-only --max-depth 1", "\"type\":\"observe\",\"handle\":42,\"maxDepth\":1,\"interactiveOnly\":true")]
+    [InlineData("invoke r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "\"type\":\"invoke\",\"ref\":\"r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"")]
+    [InlineData("set-value r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ready", "\"type\":\"set_value\",\"ref\":\"r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"text\":\"ready\"")]
+    [InlineData("wait-for --title Done --timeout 1000", "\"type\":\"wait_for\",\"windowTitle\":\"Done\",\"milliseconds\":1000")]
     public async Task HeldInputZoomAndRepeatCommandsAreAgentActions(string command, string expected)
     {
         var call = await RunAsync(command.Split(' '));

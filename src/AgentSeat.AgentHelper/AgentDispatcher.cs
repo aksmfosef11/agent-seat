@@ -8,12 +8,15 @@ namespace AgentSeat.AgentHelper;
 /// <summary>Turns one validated request into an effect on this session and a response.</summary>
 internal sealed class AgentDispatcher
 {
+    private readonly UiAutomation _ui = new();
+
     internal AgentResponse Handle(AgentRequest request)
     {
         var problem = AgentRequestValidator.Validate(request);
         if (problem is not null)
         {
-            return AgentResponse.Failure(AgentControlException.InvalidRequest, problem);
+            return AgentResponse.Failure(AgentControlException.InvalidRequest, problem)
+                with { Disposition = AgentDisposition.NotDelivered };
         }
 
         try
@@ -21,13 +24,16 @@ internal sealed class AgentDispatcher
             lock (InputInjector.Sync)
             {
                 // Status checks and the owner's live preview must not keep held input alive.
-                var isInput = request.Action is not (AgentActions.Info or AgentActions.Screenshot or AgentActions.Windows or AgentActions.Observe);
+                var isInput = AgentActions.IsInput(request.Action);
                 if (isInput)
                 {
                     InputInjector.MarkActivity();
                 }
 
-                var data = Execute(request);
+                var response = request.Action is AgentActions.Observe or AgentActions.Invoke or AgentActions.SetValue or AgentActions.WaitFor
+                    ? _ui.Run(request)
+                    : AgentResponse.Success(Execute(request));
+                var data = response.Data;
                 // While anything is held every input action says so, so the agent does not forget to let go.
                 if (isInput && data?["held"] is null && InputInjector.HeldNames().Count > 0)
                 {
@@ -35,7 +41,11 @@ internal sealed class AgentDispatcher
                     data["held"] = HeldArray();
                 }
 
-                return AgentResponse.Success(data);
+                return response with
+                {
+                    Data = data,
+                    Disposition = response.Disposition ?? (isInput ? AgentDisposition.Dispatched : null)
+                };
             }
         }
         catch (AgentActionException exception)
@@ -100,8 +110,6 @@ internal sealed class AgentDispatcher
                 return Held();
             case AgentActions.Windows:
                 return WindowCatalog.List();
-            case AgentActions.Observe:
-                return UiObservation.Capture(request);
             case AgentActions.FocusWindow:
                 return WindowCatalog.Focus(request.Handle!.Value);
             case AgentActions.CloseWindow:

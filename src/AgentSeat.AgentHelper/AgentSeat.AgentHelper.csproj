@@ -9,6 +9,7 @@
     <RootNamespace>AgentSeat.AgentHelper</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="AgentSeat.UiProbe" />
     <Using Include="System.IO" />
     <ProjectReference Include="..\AgentSeat.Core\AgentSeat.Core.csproj" />
   </ItemGroup>

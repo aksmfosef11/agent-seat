@@ -18,6 +18,10 @@ AGENTSEAT_AGENT_TOKEN_FILE = 'C:\ProgramData\agent-seat\agent-token.txt'
 
 MCP 도구는 `seat_status`, `seat_start`, `seat_observe`, `seat_act`입니다. 같은 좌석의 새 AI 대화에는 새 MCP 연결을 사용합니다. 첫 관찰은 전체 이미지를 반환합니다. 후속 `image="auto"` 관찰은 UI 텍스트를 우선 사용하고 필요한 경우 이미지/crop을 전달합니다. 그림, 캔버스, 색상·배치 검증에는 `image="always"`를 사용하세요. inline image가 제공되면 파일을 별도로 다시 열지 않습니다.
 
+`seat_observe`에 `handle`을 지정하면 원하는 창을 읽습니다. `interactiveOnly: true`와 `maxDepth: 2`로 개요를 보고, `ui.targets`에서 `canExpand`가 표시된 참조를 `rootRef`로 넘겨 하위 요소를 읽을 수 있습니다. 각 대상의 `index`는 `ui.text` 줄 번호에 대응합니다. `seat_act`에 `{"type":"invoke","ref":"…"}` 또는 `{"type":"set_value","ref":"…","text":"…"}`를 전달하세요. `wait_for`는 `windowTitle` 또는 `handle`과 선택 항목인 `role`, `name`, `milliseconds`로 UI가 나타날 때까지 기다립니다.
+
+`actionResults`에는 배치 단계별 결과가 입력 인덱스와 함께 들어갑니다. `disposition.delivery`가 `not_delivered`면 해당 단계가 전송되지 않았다는 뜻입니다. `delivery_uncertain` 또는 `delivered_unverified`면 먼저 상태를 다시 관찰하세요. 후속 UI 관찰 오류는 `observationError`, 이미지 오류는 `screenshotError`로 별도 전달됩니다.
+
 실패/취소는 일부 입력이 실행된 상태일 수 있습니다. 배치를 재전송하지 말고 먼저 다시 관찰하세요. paused/stopped 상태에서는 소유자에게 맡기고 멈추세요. 소유자의 화면, 토큰, 승인 목록을 다른 방법으로 탐색하거나 수정하지 않습니다.
 
 `observationUsage`는 관찰/이미지 개수와 픽셀 수를 보여주며 실제 모델의 청구 토큰 수는 아닙니다. 비용은 모델, 이미지 크기/detail, 도구 호출 횟수와 앱의 UI 텍스트 지원에 따라 달라집니다. JPEG 파일 크기가 줄어든다고 이미지 토큰도 같은 비율로 줄지는 않습니다.

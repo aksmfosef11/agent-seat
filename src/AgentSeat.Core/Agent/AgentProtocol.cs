@@ -17,6 +17,9 @@ public static class AgentActions
     public const string Key = "key";
     public const string Windows = "windows";
     public const string Observe = "observe";
+    public const string Invoke = "invoke";
+    public const string SetValue = "set_value";
+    public const string WaitFor = "wait_for";
     public const string FocusWindow = "focus_window";
     public const string CloseWindow = "close_window";
     public const string Launch = "launch";
@@ -41,8 +44,10 @@ public static class AgentActions
     public static IReadOnlySet<string> All { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
         Info, Screenshot, MouseMove, Click, Drag, Scroll, Type, Key, Windows, Observe, FocusWindow, CloseWindow, Launch, Wait,
-        KeyDown, KeyUp, MouseDown, MouseUp, Hold, Release
+        KeyDown, KeyUp, MouseDown, MouseUp, Hold, Release, Invoke, SetValue, WaitFor
     };
+
+    public static bool IsInput(string action) => action is not (Info or Screenshot or Windows or Observe or Wait or WaitFor);
 
     /// <summary>Actions that can leave input held in the session after they return.</summary>
     public static bool CanLeaveInputHeld(string action) => action is KeyDown or MouseDown;
@@ -102,6 +107,20 @@ public sealed record AgentRequest
 
     public int? MaxCharacters { get; init; }
 
+    public int? MaxDepth { get; init; }
+
+    public bool? InteractiveOnly { get; init; }
+
+    public string? RootRef { get; init; }
+
+    public string? Ref { get; init; }
+
+    public string? WindowTitle { get; init; }
+
+    public string? Role { get; init; }
+
+    public string? Name { get; init; }
+
     public string? Path { get; init; }
 
     public string[]? Arguments { get; init; }
@@ -144,10 +163,19 @@ public sealed record AgentResponse
 
     public JsonObject? Data { get; init; }
 
+    public AgentDisposition? Disposition { get; init; }
+
     public static AgentResponse Success(JsonObject? data = null) => new() { Ok = true, Data = data };
 
     public static AgentResponse Failure(string code, string message) =>
         new() { Ok = false, ErrorCode = code, Error = message };
+}
+
+public sealed record AgentDisposition(string Delivery, string Retry)
+{
+    public static AgentDisposition NotDelivered { get; } = new("not_delivered", "safe");
+    public static AgentDisposition Dispatched { get; } = new("delivered_unverified", "observe");
+    public static AgentDisposition Uncertain { get; } = new("delivery_uncertain", "observe");
 }
 
 /// <summary>
@@ -178,7 +206,8 @@ public sealed record AgentActionResult(
     bool Ok,
     string? Error,
     string? ErrorCode,
-    JsonObject? Data);
+    JsonObject? Data,
+    AgentDisposition? Disposition = null);
 
 /// <summary>
 /// What a batch returns, mirroring the computer-use loop: every action that ran, then one

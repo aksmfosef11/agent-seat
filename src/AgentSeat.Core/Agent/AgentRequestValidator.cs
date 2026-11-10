@@ -49,6 +49,9 @@ public static class AgentRequestValidator
         {
             AgentActions.Info or AgentActions.Windows or AgentActions.Release => null,
             AgentActions.Observe => ValidateObservation(request),
+            AgentActions.Invoke => ValidateRef(request.Ref),
+            AgentActions.SetValue => ValidateRef(request.Ref) ?? ValidateText(request, allowEmpty: true),
+            AgentActions.WaitFor => ValidateWaitFor(request),
             AgentActions.Screenshot => ValidateScreenshot(request),
             AgentActions.MouseMove => RequirePoint(request.X, request.Y, "x", "y"),
             AgentActions.Click => ValidateClick(request),
@@ -111,7 +114,34 @@ public static class AgentRequestValidator
     private static string? ValidateObservation(AgentRequest request) =>
         request.Handle is <= 0 ? "Window handle must be positive." :
         request.MaxElements is < 1 or > 150 ? "maxElements must be between 1 and 150." :
-        request.MaxCharacters is < 256 or > 12000 ? "maxCharacters must be between 256 and 12000." : null;
+        request.MaxCharacters is < 256 or > 12000 ? "maxCharacters must be between 256 and 12000." :
+        request.MaxDepth is < 0 or > 12 ? "maxDepth must be between 0 and 12." :
+        request.RootRef is null ? null :
+        request.Handle is not null ? "Use either rootRef or handle." : ValidateRef(request.RootRef);
+
+    private static string? ValidateRef(string? reference) =>
+        reference is { Length: 34 } && reference.StartsWith("r-", StringComparison.Ordinal) &&
+        reference.Skip(2).All(char.IsAsciiHexDigitLower) ? null : "Use an element ref returned by observe.";
+
+    private static string? ValidateWaitFor(AgentRequest request)
+    {
+        if ((request.Handle is null) == (request.WindowTitle is null) || request.Handle is <= 0 ||
+            (request.WindowTitle is not null && !ValidLabel(request.WindowTitle, 512)))
+        {
+            return "wait_for needs either a positive window handle or a windowTitle of up to 512 characters.";
+        }
+
+        if ((request.Role is not null && !ValidLabel(request.Role, 64)) ||
+            (request.Name is not null && !ValidLabel(request.Name, 256)))
+        {
+            return "wait_for role and name must be non-empty and at most 64 and 256 characters respectively.";
+        }
+
+        return request.Milliseconds is null ? null : ValidateWait(request);
+    }
+
+    private static bool ValidLabel(string value, int limit) =>
+        value.Length <= limit && !string.IsNullOrWhiteSpace(value) && !value.Contains('\0');
 
     private static string? ValidateClick(AgentRequest request) =>
         ValidateOptionalPoint(request) ??
@@ -205,11 +235,11 @@ public static class AgentRequestValidator
         return ValidateOptionalPoint(request) ?? ValidateModifiers(request.Modifiers);
     }
 
-    private static string? ValidateText(AgentRequest request)
+    private static string? ValidateText(AgentRequest request, bool allowEmpty = false)
     {
-        if (string.IsNullOrEmpty(request.Text))
+        if (request.Text is null || (!allowEmpty && request.Text.Length == 0))
         {
-            return "Text must not be empty.";
+            return allowEmpty ? "Text is required." : "Text must not be empty.";
         }
 
         if (request.Text.Length > MaxTextLength)

@@ -205,9 +205,12 @@ public sealed class AgentControlService(
             int? failedIndex = null;
             string? error = null;
             string? errorCode = null;
-            foreach (var step in batch.Steps)
+            for (var index = 0; index < batch.Steps.Count; index++)
             {
+                var step = batch.Steps[index];
                 var started = Stopwatch.GetTimestamp();
+                var input = AgentActions.IsInput(step.Request.Action);
+                var sending = false;
                 AgentResponse response;
                 try
                 {
@@ -215,14 +218,22 @@ public sealed class AgentControlService(
                     // The owner may have switched the seat off or the administrator removed it from the allow
                     // list since the batch began; every action re-checks instead of trusting the snapshot.
                     await RevalidateAsync(seat, cancellationToken).ConfigureAwait(false);
-                    response = step.Request.Action == AgentActions.Wait
-                        ? await WaitAsync(step.Request, cancellationToken).ConfigureAwait(false)
-                        : await SendLockedAsync(seat, state, step.Request, countsAsAction: true, epoch, cancellationToken)
-                            .ConfigureAwait(false);
+                    sending = true;
+                    response = step.Request.Action switch
+                    {
+                        AgentActions.Wait => await WaitAsync(step.Request, cancellationToken).ConfigureAwait(false),
+                        AgentActions.WaitFor => await WaitForAsync(seat, state, step.Request, epoch, cancellationToken).ConfigureAwait(false),
+                        _ => await SendLockedAsync(seat, state, step.Request, countsAsAction: true, epoch, cancellationToken)
+                            .ConfigureAwait(false)
+                    };
                 }
                 catch (AgentControlException exception)
                 {
-                    response = AgentResponse.Failure(exception.Code, exception.Message);
+                    var uncertain = sending && exception.Code is (AgentControlException.Timeout or AgentControlException.HelperFailed);
+                    response = AgentResponse.Failure(exception.Code, exception.Message) with
+                    {
+                        Disposition = input ? (uncertain ? AgentDisposition.Uncertain : AgentDisposition.NotDelivered) : null
+                    };
                 }
 
                 var message = AgentAuditSummary.Clip(response.Error, MaxErrorCharacters);
@@ -233,7 +244,8 @@ public sealed class AgentControlService(
                     response.Ok,
                     response.Ok ? null : message,
                     response.ErrorCode,
-                    response.Data));
+                    response.Data,
+                    input ? response.Disposition ?? (response.Ok ? AgentDisposition.Dispatched : AgentDisposition.Uncertain) : null));
                 if (!response.Ok)
                 {
                     failedIndex = step.SourceIndex;
@@ -242,7 +254,8 @@ public sealed class AgentControlService(
                     break;
                 }
 
-                if (step.Request.Action != AgentActions.Wait && batch.SettleMilliseconds > 0)
+                var nextWaitsForUi = index + 1 < batch.Steps.Count && batch.Steps[index + 1].Request.Action == AgentActions.WaitFor;
+                if (input && batch.SettleMilliseconds > 0 && !nextWaitsForUi)
                 {
                     await Task.Delay(TimeSpan.FromMilliseconds(batch.SettleMilliseconds), _time, cancellationToken)
                         .ConfigureAwait(false);
@@ -440,6 +453,43 @@ public sealed class AgentControlService(
         return AgentResponse.Success();
     }
 
+    private async Task<AgentResponse> WaitForAsync(
+        SeatDefinition seat, SeatState state, AgentRequest request, int epoch, CancellationToken cancellationToken)
+    {
+        var duration = TimeSpan.FromMilliseconds(request.Milliseconds ?? AgentRequestValidator.MaxWaitMilliseconds);
+        using var deadline = new CancellationTokenSource(duration, _time);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(deadline.Token, cancellationToken);
+        JsonObject? last = null;
+        try
+        {
+            while (true)
+            {
+                ThrowIfInterrupted(state, epoch);
+                linked.Token.ThrowIfCancellationRequested();
+                await RevalidateAsync(seat, linked.Token).ConfigureAwait(false);
+                var response = await SendLockedAsync(seat, state, request, countsAsAction: false, epoch, linked.Token)
+                    .ConfigureAwait(false);
+                ThrowIfInterrupted(state, epoch);
+                if (!response.Ok && response.ErrorCode is not ("uia_timeout" or "uia_unavailable"))
+                {
+                    return response;
+                }
+                last = response.Data ?? last;
+                if (response.Data?["matched"] is JsonValue value && value.TryGetValue<bool>(out var matched) && matched)
+                {
+                    return response;
+                }
+                await Task.Delay(TimeSpan.FromMilliseconds(150), _time, linked.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (deadline.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            ThrowIfInterrupted(state, epoch);
+            return AgentResponse.Failure("wait_timeout", "The requested UI state did not appear before the deadline.")
+                with { Data = last };
+        }
+    }
+
     /// <summary>Sends one command to the seat's helper; the caller must hold the seat's gate.</summary>
     private async Task<AgentResponse> SendLockedAsync(
         SeatDefinition seat,
@@ -460,6 +510,7 @@ public sealed class AgentControlService(
             // step was on its way must neither bring a helper back nor let the command through.
             ThrowIfInterrupted(state, epoch);
             var helper = await EnsureHelperAsync(seat, state, session, cancellationToken).ConfigureAwait(false);
+            ThrowIfInterrupted(state, epoch);
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(_options.CommandTimeout);
             if (AgentActions.CanLeaveInputHeld(request.Action))

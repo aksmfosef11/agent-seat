@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AgentSeat.Core.Agent;
 
 /// <summary>The observation baseline belongs to this MCP connection, never a file shared with another AI.</summary>
 internal sealed class ComputerObservationSession(HttpClient client, string seat)
@@ -10,7 +11,7 @@ internal sealed class ComputerObservationSession(HttpClient client, string seat)
     private readonly string _prefix = $"seats/{Uri.EscapeDataString(seat)}/agent";
     private bool _hasInitialImage;
     private string? _signature;
-    private string? _uiText;
+    private string? _uiSignature;
     private long? _window;
     private int _observations;
     private int _images;
@@ -20,7 +21,7 @@ internal sealed class ComputerObservationSession(HttpClient client, string seat)
     {
         _hasInitialImage = false;
         _signature = null;
-        _uiText = null;
+        _uiSignature = null;
         _window = null;
     }
 
@@ -46,7 +47,8 @@ internal sealed class ComputerObservationSession(HttpClient client, string seat)
         var mode = arguments["image"]?.GetValue<string>() ?? "auto";
         if (mode is not ("auto" or "always" or "never")) throw new ArgumentException("image must be auto, always or never.");
         if (actions is not null && !_hasInitialImage)
-            return Error("observation_required", "Call seat_observe first to see this conversation's initial full screen. No actions ran.");
+            return Error("observation_required", "Call seat_observe first to see this conversation's initial full screen. No actions ran.",
+                AgentDisposition.NotDelivered);
         if (actions is { Count: > 49 }) throw new ArgumentException("At most 49 actions per call (one slot is reserved for observation).");
         var maxElements = arguments["maxElements"]?.GetValue<int>() ?? 50;
         var maxCharacters = arguments["maxCharacters"]?.GetValue<int>() ?? 3000;
@@ -61,10 +63,15 @@ internal sealed class ComputerObservationSession(HttpClient client, string seat)
             throw new ArgumentException("region width and height must be positive.");
         var first = !_hasInitialImage;
         var steps = actions is null ? new JsonArray() : (JsonArray)actions.DeepClone();
-        steps.Add(new JsonObject
+        var observe = new JsonObject
         {
             ["type"] = "observe", ["maxElements"] = maxElements, ["maxCharacters"] = maxCharacters
-        });
+        };
+        foreach (var name in new[] { "handle", "rootRef", "interactiveOnly", "maxDepth" })
+            if (arguments[name] is { } value) observe[name] = value.DeepClone();
+        var scoped = observe.ContainsKey("handle") || observe.ContainsKey("rootRef");
+        var observationIndex = steps.Count;
+        steps.Add(observe);
         var body = new JsonObject
         {
             ["actions"] = steps, ["screenshot"] = first || mode == "always" || region is not null,
@@ -73,15 +80,16 @@ internal sealed class ComputerObservationSession(HttpClient client, string seat)
         if (!first && region is not null) body["region"] = Region(region);
         var batch = await RequestAsync("actions", body, cancellationToken);
         var entries = batch["results"] as JsonArray;
-        var observation = entries?.OfType<JsonObject>()
-            .LastOrDefault(entry => entry["action"]?.GetValue<string>() == "observe")?["data"] as JsonObject;
+        var observationEntry = entries?.OfType<JsonObject>().LastOrDefault(entry =>
+            entry["action"]?.GetValue<string>() == "observe" && entry["index"]?.GetValue<int>() == observationIndex);
+        var observation = observationEntry?["data"] as JsonObject;
         var window = observation?["windowHandle"]?.GetValue<long>();
         var switchedWindow = _window is not null && window is not null && _window != window;
         var image = batch["screenshot"] as JsonObject;
         // UIA is optional. Old helpers, games, canvas apps and hung providers fall back to images. Never retry input.
         var halted = batch["errorCode"]?.GetValue<string>() is "paused" or "stopped" or "disabled";
         if (image is null && !halted && (first || mode == "always" ||
-            (mode == "auto" && (observation?["available"]?.GetValue<bool>() != true || switchedWindow ||
+            (mode == "auto" && !scoped && (observation?["available"]?.GetValue<bool>() != true || switchedWindow ||
                                 batch["ok"]?.GetValue<bool>() == false))))
         {
             var screenshotBody = new JsonObject
@@ -92,38 +100,67 @@ internal sealed class ComputerObservationSession(HttpClient client, string seat)
             if (!first && !switchedWindow && mode == "auto" && _signature is not null)
                 screenshotBody["since"] = _signature;
             if (!first && region is not null) screenshotBody["region"] = Region(region);
-            var capture = await RequestAsync("actions", screenshotBody, cancellationToken);
-            image = capture["screenshot"] as JsonObject;
-            if (image is null) batch["screenshotError"] = capture["error"]?.DeepClone() ?? JsonValue.Create("No image returned.");
+            try
+            {
+                var capture = await RequestAsync("actions", screenshotBody, cancellationToken);
+                image = capture["screenshot"] as JsonObject;
+                if (image is null) batch["screenshotError"] = capture["error"]?.DeepClone() ?? JsonValue.Create("No image returned.");
+            }
+            catch (Exception exception) when (exception is HttpRequestException or IOException or JsonException or OperationCanceledException)
+            {
+                // The action response already arrived. Preserve it even when the follow-up image fails.
+                batch["screenshotError"] = "The follow-up image was unavailable.";
+            }
         }
+        var postObservationFailed = actions is not null && !halted && entries is { Count: > 1 } &&
+                                    observationEntry?["ok"]?.GetValue<bool>() == false;
         var metadata = new JsonObject
         {
-            ["seat"] = seat, ["ok"] = batch["ok"]?.DeepClone() ?? JsonValue.Create(false)
+            ["seat"] = seat, ["ok"] = postObservationFailed || batch["ok"]?.GetValue<bool>() == true
         };
-        foreach (var name in new[] { "errorCode", "error", "failedIndex", "screenshotError" })
+        foreach (var name in new[] { "screenshotError", "disposition" })
             if (batch[name] is { } value) metadata[name] = value.DeepClone();
-        if (actions is not null)
-            metadata["completed"] = entries?.OfType<JsonObject>().Count(entry =>
-                entry["action"]?.GetValue<string>() != "observe" && entry["ok"]?.GetValue<bool>() == true) ?? 0;
-        var text = observation?["text"]?.GetValue<string>();
-        if (text is not null)
+        if (postObservationFailed)
         {
-            metadata["uiChanged"] = text != _uiText;
-            if (text != _uiText || first) metadata["ui"] = observation!.DeepClone();
-            _uiText = text;
+            metadata["observationError"] = new JsonObject
+            {
+                ["errorCode"] = batch["errorCode"]?.DeepClone(),
+                ["error"] = batch["error"]?.DeepClone()
+            };
+        }
+        else
+        {
+            foreach (var name in new[] { "errorCode", "error", "failedIndex" })
+                if (batch[name] is { } value) metadata[name] = value.DeepClone();
+        }
+        if (observation is not null)
+        {
+            var signature = observation.ToJsonString();
+            metadata["uiChanged"] = signature != _uiSignature;
+            if (signature != _uiSignature || first || scoped) metadata["ui"] = observation.DeepClone();
+            _uiSignature = signature;
             _window = window;
         }
         // Retain useful data (window lists, launch PID, held input), not per-action pointer echoes.
-        if (entries is not null)
+        if (actions is not null)
         {
             var useful = new JsonArray();
-            foreach (var entry in entries.OfType<JsonObject>())
+            var outcomes = new JsonArray();
+            var completed = 0;
+            foreach (var entry in entries?.OfType<JsonObject>() ?? [])
             {
-                if (entry["action"]?.GetValue<string>() == "observe" || entry["data"] is not JsonObject data) continue;
+                if (ReferenceEquals(entry, observationEntry)) continue;
+                var outcome = (JsonObject)entry.DeepClone();
+                if (outcome["action"]?.GetValue<string>() != AgentActions.WaitFor) outcome.Remove("data");
+                if (entry["ok"]?.GetValue<bool>() == true) completed++;
+                outcomes.Add(outcome);
+                if (entry["data"] is not JsonObject data) continue;
                 var copy = (JsonObject)data.DeepClone();
                 copy.Remove("cursorX"); copy.Remove("cursorY");
                 if (copy.Count > 0) useful.Add(copy);
             }
+            metadata["completed"] = completed;
+            metadata["actionResults"] = outcomes;
             if (useful.Count > 0) metadata["results"] = useful;
         }
         var content = new JsonArray();
@@ -203,8 +240,10 @@ internal sealed class ComputerObservationSession(HttpClient client, string seat)
         ["isError"] = value["ok"]?.GetValue<bool>() == false
     };
 
-    internal static JsonObject Error(string code, string message) => TextResult(new JsonObject
+    internal static JsonObject Error(string code, string message, AgentDisposition? disposition = null)
     {
-        ["ok"] = false, ["errorCode"] = code, ["error"] = message
-    });
+        var error = new JsonObject { ["ok"] = false, ["errorCode"] = code, ["error"] = message };
+        if (disposition is not null) error["disposition"] = JsonSerializer.SerializeToNode(disposition, AgentJson.Options);
+        return TextResult(error);
+    }
 }

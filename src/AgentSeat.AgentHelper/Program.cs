@@ -11,8 +11,7 @@ using AgentSeat.Core.Agent;
 // that session's screen and input, and takes commands over a named pipe that only the SID passed
 // in --allow-sid (the service's identity) may open.
 NativeMethods.SetProcessDpiAwarenessContext(NativeMethods.PerMonitorAwareV2);
-// UI providers can hang. A disposable MTA worker performs read-only observation; it opens no input pipe
-// and, unlike a regular helper, never releases or injects any keys. Its parent enforces a timeout.
+// UI providers can hang. The disposable MTA worker opens no control pipe and never injects physical input.
 if (args is ["--observe-uia"])
 {
     return UiObservation.RunWorker();

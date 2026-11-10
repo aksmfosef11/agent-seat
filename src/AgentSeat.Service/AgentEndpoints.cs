@@ -136,19 +136,20 @@ internal static class AgentEndpoints
             }
             catch (JsonException exception)
             {
-                return Failure(StatusCodes.Status400BadRequest, AgentControlException.InvalidRequest, $"The body is not valid JSON: {exception.Message}");
+                return Failure(StatusCodes.Status400BadRequest, AgentControlException.InvalidRequest,
+                    $"The body is not valid JSON: {exception.Message}", AgentDisposition.NotDelivered);
             }
 
             if (!AgentActionBatch.TryParse(body, out var batch, out var parseError))
             {
-                return Failure(StatusCodes.Status400BadRequest, AgentControlException.InvalidRequest, parseError!);
+                return Failure(StatusCodes.Status400BadRequest, AgentControlException.InvalidRequest, parseError!, AgentDisposition.NotDelivered);
             }
 
             return await WithSeat(id, manager, cancellationToken, async seat =>
             {
                 var result = await control.ExecuteBatchAsync(seat, batch!, cancellationToken);
                 return Results.Json(result, AgentJson.Options, statusCode: result.Ok ? 200 : StatusFor(result.ErrorCode));
-            });
+            }, batchPreflight: true);
         });
 
         agent.MapGet("/screenshot", (
@@ -245,12 +246,13 @@ internal static class AgentEndpoints
         string id,
         SeatManager manager,
         CancellationToken cancellationToken,
-        Func<SeatDefinition, Task<IResult>> action)
+        Func<SeatDefinition, Task<IResult>> action,
+        bool batchPreflight = false)
     {
         var seat = await manager.GetAsync(id, cancellationToken);
         if (seat is null)
         {
-            return SeatNotFound(id);
+            return SeatNotFound(id, batchPreflight ? AgentDisposition.NotDelivered : null);
         }
 
         try
@@ -259,15 +261,16 @@ internal static class AgentEndpoints
         }
         catch (AgentControlException exception)
         {
-            return Failure(StatusFor(exception.Code), exception.Code, exception.Message);
+            return Failure(StatusFor(exception.Code), exception.Code, exception.Message,
+                batchPreflight ? AgentDisposition.NotDelivered : null);
         }
     }
 
-    private static IResult SeatNotFound(string id) =>
-        Failure(StatusCodes.Status404NotFound, "seat_not_found", $"Seat '{id}' was not found.");
+    private static IResult SeatNotFound(string id, AgentDisposition? disposition = null) =>
+        Failure(StatusCodes.Status404NotFound, "seat_not_found", $"Seat '{id}' was not found.", disposition);
 
-    private static IResult Failure(int status, string code, string message) =>
-        Results.Json(new { error = message, errorCode = code }, statusCode: status);
+    private static IResult Failure(int status, string code, string message, AgentDisposition? disposition = null) =>
+        Results.Json(new { error = message, errorCode = code, disposition }, AgentJson.Options, statusCode: status);
 
     private static int StatusFor(string? code) => code switch
     {

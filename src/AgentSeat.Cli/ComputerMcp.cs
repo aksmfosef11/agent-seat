@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AgentSeat.Core.Agent;
 
 /// <summary>Local stdio MCP (2025-11-25 lifecycle). stdout contains protocol messages only.</summary>
 internal sealed class ComputerMcp(HttpClient client, string? seat, string? explicitToken)
@@ -119,6 +120,7 @@ internal sealed class ComputerMcp(HttpClient client, string? seat, string? expli
         using var cancellationSource = new CancellationTokenSource();
         if (!_pending.TryAdd(id.ToJsonString(), cancellationSource)) return RpcError(id, -32600, "Duplicate request id.");
         var locked = false;
+        var actionCall = false;
         try
         {
             // Reject concurrent calls rather than queuing coordinates behind a changed observation.
@@ -130,6 +132,9 @@ internal sealed class ComputerMcp(HttpClient client, string? seat, string? expli
             var arguments = parameters["arguments"] as JsonObject ?? new JsonObject();
             if (tool is not ("seat_status" or "seat_start" or "seat_observe" or "seat_act"))
                 throw new ArgumentException("Unknown tool.");
+            actionCall = tool == "seat_act";
+            if (actionCall && arguments["actions"] is not JsonArray)
+                return RpcResult(id, ComputerObservationSession.Error("invalid_request", "actions must be an array.", AgentDisposition.NotDelivered));
             var token = ComputerCli.ResolveToken(explicitToken);
             if (token is null) return RpcResult(id, ComputerObservationSession.Error("no_token", "Agent token is not configured."));
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -139,22 +144,24 @@ internal sealed class ComputerMcp(HttpClient client, string? seat, string? expli
                 "seat_status" => await _session.StatusAsync(cancellationSource.Token),
                 "seat_start" => await _session.StartAsync(cancellationSource.Token),
                 "seat_observe" => await _session.ObserveAsync(arguments, null, cancellationSource.Token),
-                _ => await _session.ObserveAsync(arguments, arguments["actions"] as JsonArray ??
-                    throw new ArgumentException("actions must be an array."), cancellationSource.Token)
+                _ => await _session.ObserveAsync(arguments, (JsonArray)arguments["actions"]!, cancellationSource.Token)
             };
             return RpcResult(id, result);
         }
         catch (OperationCanceledException)
         {
             _session?.Reset();
-            return RpcResult(id, ComputerObservationSession.Error("cancelled", "Call cancelled. Some actions may have run; observe before acting again."));
+            return RpcResult(id, ComputerObservationSession.Error("cancelled",
+                actionCall ? "Call cancelled. Some actions may have run; observe before acting again." : "Call cancelled.",
+                actionCall ? AgentDisposition.Uncertain : null));
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or JsonException
                                           or HttpRequestException or IOException or UnauthorizedAccessException)
         {
             if (exception is HttpRequestException or IOException or JsonException) _session?.Reset();
             return RpcResult(id, ComputerObservationSession.Error("tool_failed", exception is HttpRequestException
-                ? "AgentSeat service request failed. Observe the current state before retrying any input." : exception.Message));
+                ? "AgentSeat service request failed. Observe the current state before retrying any input." : exception.Message,
+                actionCall ? AgentDisposition.Uncertain : null));
         }
         finally
         {
@@ -169,12 +176,16 @@ internal sealed class ComputerMcp(HttpClient client, string? seat, string? expli
             {"image":{"type":"string","enum":["auto","always","never"],"default":"auto"},
              "maxElements":{"type":"integer","minimum":1,"maximum":150,"default":50},
              "maxCharacters":{"type":"integer","minimum":256,"maximum":12000,"default":3000},
+             "handle":{"type":"integer","minimum":1,"description":"Observe this window instead of the foreground window."},
+             "interactiveOnly":{"type":"boolean","description":"Keep actionable controls and containers for drilling down."},
+             "maxDepth":{"type":"integer","minimum":0,"maximum":12,"description":"Use a small depth for an overview. Expand a returned canExpand target using rootRef."},
+             "rootRef":{"type":"string","description":"Read the subtree of this ref from a recent observation. Omit handle."},
              "region":{"type":"array","items":{"type":"integer"},"minItems":4,"maxItems":4,"description":"Optional image crop [x,y,width,height]; crop coordinates add x,y."}}
             """)!.AsObject();
         var actionProperties = (JsonObject)observationProperties.DeepClone();
         actionProperties["actions"] = JsonNode.Parse("""
             {"type":"array","maxItems":49,"items":{"type":"object","properties":{"type":{"type":"string"}},"required":["type"]},
-             "description":"Ordered computer-use actions: click(x,y), type(text), keypress(keys), scroll(x,y,scroll_y), drag(path), move(x,y), wait(ms), launch(path), windows, focus_window(handle), close_window(handle), hold(keys,ms), release."}
+             "description":"Ordered computer-use actions: invoke(ref), set_value(ref,text), wait_for(handle or windowTitle, optional role/name/milliseconds), click(x,y), type(text), keypress(keys), scroll(x,y,scroll_y), drag(path), move(x,y), wait(ms), launch(path), windows, focus_window(handle), close_window(handle), hold(keys,ms), release."}
             """);
         actionProperties["settleMs"] = JsonNode.Parse("""{"type":"integer","minimum":0,"maximum":5000,"default":250}""");
         return new JsonArray(

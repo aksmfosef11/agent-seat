@@ -5,5 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="AgentSeat.Core.Tests" />
+    <ProjectReference Include="..\AgentSeat.Core\AgentSeat.Core.csproj" />
   </ItemGroup>
 </Project>

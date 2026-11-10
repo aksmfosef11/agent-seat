@@ -243,6 +243,9 @@ public static class AgentActionBatch
                 case AgentActions.Info:
                 case AgentActions.Windows:
                 case AgentActions.Observe:
+                case AgentActions.Invoke:
+                case AgentActions.SetValue:
+                case AgentActions.WaitFor:
                 case AgentActions.FocusWindow:
                 case AgentActions.CloseWindow:
                 case AgentActions.Launch:

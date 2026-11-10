@@ -35,6 +35,33 @@ internal static class WindowCatalog
         return window == IntPtr.Zero ? new JsonObject() : Describe(window, window);
     }
 
+    internal static long? FindByTitle(string title)
+    {
+        long? match = null;
+        var ambiguous = false;
+        NativeMethods.EnumWindowsProc callback = (window, _) =>
+        {
+            if (!IsUserWindow(window) || !string.Equals(ReadTitle(window), title, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+            if (match is not null)
+            {
+                ambiguous = true;
+                return false;
+            }
+            match = window.ToInt64();
+            return true;
+        };
+        _ = NativeMethods.EnumWindows(callback, IntPtr.Zero);
+        GC.KeepAlive(callback);
+        if (ambiguous)
+        {
+            throw new AgentActionException("ambiguous_target", "Several windows have that title. Use a window handle.");
+        }
+        return match;
+    }
+
     internal static JsonObject Focus(long handle)
     {
         var window = Resolve(handle);
@@ -136,16 +163,21 @@ internal static class WindowCatalog
                cloaked == 0;
     }
 
-    private static JsonObject Describe(IntPtr window, IntPtr foreground)
+    private static string ReadTitle(IntPtr window)
     {
         var title = new StringBuilder(NativeMethods.GetWindowTextLengthW(window) + 1);
         _ = NativeMethods.GetWindowTextW(window, title, title.Capacity);
+        return title.ToString();
+    }
+
+    private static JsonObject Describe(IntPtr window, IntPtr foreground)
+    {
         _ = NativeMethods.GetWindowThreadProcessId(window, out var processId);
         _ = NativeMethods.GetWindowRect(window, out var rect);
         return new JsonObject
         {
             ["handle"] = window.ToInt64(),
-            ["title"] = title.ToString(),
+            ["title"] = ReadTitle(window),
             ["processId"] = (int)processId,
             ["processName"] = ProcessName(processId),
             ["x"] = rect.Left,

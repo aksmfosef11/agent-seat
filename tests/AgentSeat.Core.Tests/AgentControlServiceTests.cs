@@ -93,6 +93,8 @@ public sealed class AgentControlServiceTests
         Assert.Equal(1, result.FailedIndex);
         Assert.Equal("action_failed", result.ErrorCode);
         Assert.Equal(1, result.Completed);
+        Assert.Equal(AgentDisposition.Dispatched, result.Results[0].Disposition);
+        Assert.Equal(AgentDisposition.Uncertain, result.Results[1].Disposition);
         Assert.NotNull(result.Screenshot);
         Assert.DoesNotContain(fixture.Host.Sent, request => request.Action == AgentActions.MouseMove);
     }
@@ -211,6 +213,51 @@ public sealed class AgentControlServiceTests
         Assert.False(result.Ok);
         Assert.Equal(AgentControlException.HelperFailed, result.ErrorCode);
         Assert.Equal(1, fixture.Host.Sent.Count(request => request.Action == AgentActions.Click));
+        Assert.Equal(AgentDisposition.Uncertain, Assert.Single(result.Results).Disposition);
+    }
+
+    [Fact]
+    public async Task WaitForPollsTheTargetAndExecutesFollowingInputOnlyAfterItMatches()
+    {
+        var fixture = CreateFixture();
+        var probes = 0;
+        fixture.Host.MatchWait = request =>
+        {
+            Assert.Equal(42L, request.Handle);
+            Assert.Equal("Button", request.Role);
+            Assert.Equal("Done", request.Name);
+            return ++probes == 2;
+        };
+        var result = await fixture.Service.ExecuteBatchAsync(fixture.Seat, Batch("""
+            [{"type":"click","x":1,"y":2},
+             {"type":"wait_for","handle":42,"role":"Button","name":"Done","milliseconds":3000},
+             {"type":"type","text":"ready"}]
+            """, screenshot: false));
+
+        Assert.True(result.Ok);
+        Assert.Equal([AgentActions.Click, AgentActions.WaitFor, AgentActions.WaitFor, AgentActions.Type],
+            fixture.Host.Sent.Select(request => request.Action));
+        Assert.True(result.Results[1].Data!["matched"]!.GetValue<bool>());
+        Assert.Null(result.Results[1].Disposition);
+    }
+
+    [Fact]
+    public async Task WaitTimeoutKeepsThePriorActionOutcomeAndStopsTheRemainingBatch()
+    {
+        var fixture = CreateFixture();
+        fixture.Host.MatchWait = _ => false;
+        var result = await fixture.Service.ExecuteBatchAsync(fixture.Seat, Batch("""
+            [{"type":"click","x":1,"y":2},
+             {"type":"wait_for","windowTitle":"Save As","milliseconds":250},
+             {"type":"type","text":"unexpected"}]
+            """, screenshot: false));
+
+        Assert.Equal("wait_timeout", result.ErrorCode);
+        Assert.Equal(1, result.FailedIndex);
+        Assert.Equal(AgentDisposition.Dispatched, result.Results[0].Disposition);
+        Assert.False(result.Results[1].Data!["matched"]!.GetValue<bool>());
+        Assert.DoesNotContain(fixture.Host.Sent, request => request.Action == AgentActions.Type);
+        Assert.Single(fixture.Host.Sent, request => request.Action == AgentActions.Click);
     }
 
     [Fact]
@@ -1025,6 +1072,8 @@ public sealed class AgentControlServiceTests
 
         public Action<AgentRequest>? OnSend { get; set; }
 
+        public Func<AgentRequest, bool>? MatchWait { get; set; }
+
         public Action? OnUnavailable { get; set; }
 
         public int AttachCalls { get; private set; }
@@ -1108,6 +1157,11 @@ public sealed class AgentControlServiceTests
             if (request.Action == FailAction)
             {
                 return AgentResponse.Failure("action_failed", "nope");
+            }
+
+            if (request.Action == AgentActions.WaitFor && MatchWait is { } match)
+            {
+                return AgentResponse.Success(new JsonObject { ["matched"] = match(request) });
             }
 
             if (request.Action == AgentActions.Windows && HugeInfoResult)

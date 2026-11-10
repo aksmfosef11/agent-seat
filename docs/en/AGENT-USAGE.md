@@ -25,6 +25,10 @@ Use `begin` for each new conversation and pass the returned `context` as `--cont
 
 If a subsequent screenshot reports `changed:false`, you can reuse the previous image. Open `changes[].path` crops when available; add each crop's x/y origin to convert crop coordinates to full-screen coordinates. Scale coordinates back to the original screen when the image was resized.
 
+In `observe`, each `targets[].index` refers to a numbered row in the UI text. Use a recent `ref` with an action listed for that target. `computer invoke REF` activates a button, and `computer set-value REF TEXT` replaces an input field's value. Observe again when a ref expires or the target window changes. For dense windows, start with `computer observe --interactive-only --max-depth 2` and expand a target marked `canExpand` with `computer observe --root REF`.
+
+`computer wait-for --title 'Save As' --timeout 5000` waits for a matching window. You can also choose a window with `--window HANDLE` and wait for a specific element with `--role Button --name Save`. Titles and names match exactly, ignoring case. In a batch, use `wait_for` with `windowTitle` or `handle` and optional `role`, `name` and `milliseconds`. A timeout stops later steps and keeps earlier input outcomes in `results`.
+
 Batch reliable actions with `computer act --file <json-file>` or JSON on stdin:
 
 ```json

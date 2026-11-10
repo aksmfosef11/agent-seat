@@ -4,7 +4,9 @@ The loopback service on port 38399 stores seat definitions under `%ProgramData%\
 
 The agent API checks a protected bearer token and an administrator-controlled seat ID/account allowlist. It refuses the physical console. An `AgentSeat.AgentHelper` process runs within the seat's own WTS session, captures its desktop and injects input there. A named pipe specific to agent-seat verifies the peer process and permits only the authorized service identity. Session IDs, executable paths and process identity are checked before a helper is used or terminated.
 
-Both CLI and MCP use this API. CLI contexts and individual MCP connections own their observation baseline, so human preview frames do not replace an AI's baseline. UI Automation text reads run in a bounded, read-only child process; hung providers time out. Missing UI text falls back to images. Changes can be reported as crops. Actual model token usage is outside this local service.
+Both CLI and MCP use this API. CLI contexts and individual MCP connections own their observation baseline, so human preview frames do not replace an AI's baseline. A bounded child process handles UI Automation reads and element actions. The helper keeps a short-lived map of opaque refs and checks the live window, process and element identity before every mutation. Windows ends mutation workers when their parent helper stops. Missing UI text falls back to images, and changed regions can be returned as crops. Actual model token usage is outside this local service.
+
+Input results distinguish dispatch from UI verification. The service serializes conditional waits with the surrounding actions. A wait timeout ends the batch and keeps the outcome of earlier actions available to the caller.
 
 The browser viewer redeems a one-use ticket into a seat-specific cookie, captures JPEG frames while visible, and sends manual input to the same action endpoint. The client serializes input and cancels unsent actions when closed or disarmed. The owner's pause/kill switch applies equally to AI and browser input. Manual control is opt-in; this preview requires users to stop AI work before taking over.
 

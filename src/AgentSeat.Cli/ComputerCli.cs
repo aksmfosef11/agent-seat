@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AgentSeat.Core.Agent;
 
 /// <summary>
 /// <c>agent-seat computer</c>: a shell-friendly computer-use loop. Every command runs a batch of
@@ -166,7 +167,7 @@ internal static class ComputerCli
         }
         else if (!body.ContainsKey("screenshot"))
         {
-            body["screenshot"] = command is not ("info" or "windows" or "observe");
+            body["screenshot"] = command is not ("info" or "windows" or "observe" or "wait-for");
         }
 
         if (settle is not null)
@@ -215,8 +216,19 @@ internal static class ComputerCli
         }
 
         var output = command == "screenshot" && rest.Count > 0 ? rest[0] : null;
-        using var response = await client.PostAsJsonAsync($"{prefix}/actions", body);
-        return await PrintBatchAsync(response, seat, screensDirectory, output, context);
+        var input = command is not ("info" or "windows" or "observe" or "wait" or "wait-for" or "screenshot" or "zoom");
+        try
+        {
+            using var response = await client.PostAsJsonAsync($"{prefix}/actions", body);
+            return await PrintBatchAsync(response, seat, screensDirectory, output, context, input);
+        }
+        catch (Exception exception) when (exception is HttpRequestException or OperationCanceledException)
+        {
+            return Fail("transport_error", input
+                    ? "The service response was unavailable. Observe the UI before acting again."
+                    : "The service response was unavailable.",
+                disposition: input ? AgentDisposition.Uncertain : null);
+        }
     }
 
     private static JsonArray BuildActions(string command, List<string> args, JsonObject body)
@@ -228,8 +240,24 @@ internal static class ComputerCli
                 break;
             case "info":
             case "windows":
-            case "observe":
                 actions.Add(new JsonObject { ["type"] = command });
+                break;
+            case "observe":
+                var observe = new JsonObject { ["type"] = "observe" };
+                if (TakeOption(args, "--window") is { } window) observe["handle"] = LongArgument([window], 0, "window handle");
+                if (TakeOption(args, "--root") is { } root) observe["rootRef"] = root;
+                if (TakeOption(args, "--max-depth") is { } depth) observe["maxDepth"] = IntArgument([depth], 0, "max depth");
+                if (TakeFlag(args, "--interactive-only")) observe["interactiveOnly"] = true;
+                if (args.Count != 0) throw new ArgumentException("Usage: computer observe [--window HANDLE | --root REF] [--interactive-only] [--max-depth N]");
+                actions.Add(observe);
+                break;
+            case "invoke":
+                if (args.Count != 1) throw new ArgumentException("Usage: computer invoke REF");
+                actions.Add(new JsonObject { ["type"] = "invoke", ["ref"] = args[0] });
+                break;
+            case "set-value":
+                if (args.Count < 2) throw new ArgumentException("Usage: computer set-value REF TEXT (use '-' for stdin)");
+                actions.Add(new JsonObject { ["type"] = "set_value", ["ref"] = args[0], ["text"] = TextArgument(args.GetRange(1, args.Count - 1)) });
                 break;
             case "click":
             case "double-click":
@@ -319,6 +347,16 @@ internal static class ComputerCli
                 break;
             case "wait":
                 actions.Add(new JsonObject { ["type"] = "wait", ["ms"] = IntArgument(args, 0, "milliseconds") });
+                break;
+            case "wait-for":
+                var wait = new JsonObject { ["type"] = "wait_for" };
+                if (TakeOption(args, "--window") is { } handle) wait["handle"] = LongArgument([handle], 0, "window handle");
+                if (TakeOption(args, "--title") is { } title) wait["windowTitle"] = title;
+                if (TakeOption(args, "--role") is { } role) wait["role"] = role;
+                if (TakeOption(args, "--name") is { } name) wait["name"] = name;
+                if (TakeOption(args, "--timeout") is { } timeout) wait["milliseconds"] = IntArgument([timeout], 0, "timeout");
+                if (args.Count != 0) throw new ArgumentException("Usage: computer wait-for [--window HANDLE | --title TITLE] [--role ROLE] [--name NAME] [--timeout MS]");
+                actions.Add(wait);
                 break;
             case "focus":
             case "close":
@@ -518,7 +556,8 @@ internal static class ComputerCli
         string seat,
         string screensDirectory,
         string? outputFile,
-        string? context = null)
+        string? context,
+        bool input)
     {
         var text = await response.Content.ReadAsStringAsync();
         JsonObject? parsed;
@@ -533,7 +572,8 @@ internal static class ComputerCli
 
         if (parsed is null)
         {
-            return Fail("bad_response", $"{(int)response.StatusCode} {response.ReasonPhrase}: {text}");
+            return Fail("bad_response", $"{(int)response.StatusCode} {response.ReasonPhrase}: {text}",
+                disposition: input ? AgentDisposition.Uncertain : null);
         }
 
         // With several agent seats the agent must be able to tell which one answered, so that comes first.
@@ -598,7 +638,8 @@ internal static class ComputerCli
 
     /// <summary>
     /// Trims a batch result to what the agent acts on: per-action entries that only echo the pointer position or
-    /// repeat the batch's failure go, what is still held moves to the top, and the screenshot keeps its path, size
+    /// repeat the batch's failure go unless they describe input delivery or a wait, what is still held moves to the top,
+    /// and the screenshot keeps its path, size
     /// and change report. <c>--verbose</c> prints everything.
     /// </summary>
     private static void Compact(JsonObject root)
@@ -620,6 +661,13 @@ internal static class ComputerCli
                 {
                     data?.Remove("cursorX");
                     data?.Remove("cursorY");
+                }
+
+                if (entry["disposition"] is not null || entry["action"]?.GetValue<string>() == "wait_for")
+                {
+                    if (data?.Count == 0) entry.Remove("data");
+                    results.Add(entry);
+                    continue;
                 }
 
                 // A failure is already reported at the top level (failedIndex, error, errorCode).
@@ -1173,9 +1221,11 @@ internal static class ComputerCli
         _ => string.Empty
     };
 
-    private static int Fail(string code, string message, int exitCode = 1)
+    private static int Fail(string code, string message, int exitCode = 1, AgentDisposition? disposition = null)
     {
-        Console.WriteLine(new JsonObject { ["ok"] = false, ["errorCode"] = code, ["error"] = message }.ToJsonString(_output));
+        var result = new JsonObject { ["ok"] = false, ["errorCode"] = code, ["error"] = message };
+        if (disposition is not null) result["disposition"] = JsonSerializer.SerializeToNode(disposition, AgentJson.Options);
+        Console.WriteLine(result.ToJsonString(_output));
         return exitCode;
     }
 
@@ -1257,7 +1307,9 @@ internal static class ComputerCli
         .AppendLine("  key CHORD [CHORD ...] [--repeat N]       ctrl+s  Return  alt+Tab  ctrl+shift+t  F5  pgdn;  Down --repeat 10")
         .AppendLine("  wait MS                                  up to 10000")
         .AppendLine("  windows                                  list windows (handle, title, process, rect)")
-        .AppendLine("  observe                                  UI text, element bounds, focused controls and values (passwords hidden)")
+        .AppendLine("  observe [--window HANDLE | --root REF] [--interactive-only] [--max-depth N]")
+        .AppendLine("  invoke REF | set-value REF TEXT          use a recent observation's targets (use '-' for text on stdin)")
+        .AppendLine("  wait-for [--window HANDLE | --title TITLE] [--role ROLE] [--name NAME] [--timeout MS]")
         .AppendLine("  focus HANDLE | close HANDLE")
         .AppendLine("  launch PATH_OR_URL [ARGS...]             start a program, open a file or URL")
         .AppendLine("  info                                     screen size, cursor, foreground window, held input")
@@ -1281,6 +1333,7 @@ internal static class ComputerCli
         .AppendLine("  Windows shells mangle quotes inside JSON arguments (PowerShell/cmd drop them): pipe the JSON in")
         .AppendLine("  instead, e.g.  echo [{\"type\":\"keypress\",\"keys\":[\"ENTER\"]}] | agent-seat computer act -   or use --file.")
         .AppendLine("  Types: click double_click move drag(path) scroll(scroll_x,scroll_y) type keypress(repeat) wait screenshot,")
+        .AppendLine("         observe invoke(ref) set_value(ref,text) wait_for(handle or windowTitle, role, name, milliseconds),")
         .AppendLine("  plus windows focus_window close_window launch info zoom(region:[x0,y0,x1,y1]) key_down key_up")
         .AppendLine("  mouse_down mouse_up hold(keys,ms) long_press release (Anthropic hold_key / left_mouse_down /")
         .AppendLine("  left_mouse_up also work). A failing action stops the batch; the screenshot still shows where it")

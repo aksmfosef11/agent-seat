@@ -25,6 +25,10 @@ $cli = "$env:ProgramFiles\agent-seat\cli\agent-seat.exe"
 
 후속 스크린샷의 `changed:false`면 같은 이미지를 다시 열 필요가 없습니다. `changes[].path`가 있으면 바뀐 영역의 이미지를 먼저 엽니다. crop 좌표는 반환된 영역의 원점 x,y를 더해 전체 화면 좌표로 변환합니다. 이미지가 축소되면 원본 화면 좌표로 환산해야 합니다.
 
+`observe`의 `targets[].index`는 UI 텍스트의 줄 번호에 대응합니다. 최신 `ref`와 그 대상의 `actions`를 확인하세요. `computer invoke REF`는 버튼을 실행하고, `computer set-value REF TEXT`는 입력란 값을 바꿉니다. 참조가 만료됐거나 창이 바뀌면 다시 관찰하세요. 복잡한 창은 `computer observe --interactive-only --max-depth 2`로 훑고, `canExpand`가 표시된 대상을 `computer observe --root REF`로 펼칠 수 있습니다.
+
+`computer wait-for --title '다른 이름으로 저장' --timeout 5000`은 제목이 일치하는 창을 기다립니다. `--window HANDLE`로 창을 지정할 수도 있고, `--role Button --name 저장`을 추가하면 그 창에서 해당 요소가 나타날 때까지 기다립니다. 제목과 이름은 대소문자를 무시하고 정확히 비교합니다. 배치에서는 `wait_for`에 `windowTitle` 또는 `handle`과 선택 항목인 `role`, `name`, `milliseconds`를 전달합니다. 대기가 시간 초과되면 후속 단계가 멈추고, 앞서 실행된 입력의 결과는 `results`에 남습니다.
+
 확실한 행동은 `computer act --file <json-file>` 또는 JSON을 stdin으로 전달해 한 배치로 묶을 수 있습니다. OpenAI 형식의 `actions[]`를 받아 순서대로 실행하고 끝에서 한 번 캡처합니다. 예:
 
 ```json

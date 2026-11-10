@@ -23,9 +23,9 @@ public sealed class ComputerObservationTests
     private static JsonObject Batch(JsonObject request, bool ui = true, long handle = 10, string text = "[1] Edit value=hello", bool unchanged = false) => new()
     {
         ["ok"] = true,
-        ["results"] = new JsonArray((request["actions"] as JsonArray ?? []).OfType<JsonObject>().Select(action => (JsonNode?)new JsonObject
+        ["results"] = new JsonArray((request["actions"] as JsonArray ?? []).OfType<JsonObject>().Select((action, index) => (JsonNode?)new JsonObject
         {
-            ["action"] = action["type"]!.DeepClone(), ["ok"] = true,
+            ["index"] = index, ["action"] = action["type"]!.DeepClone(), ["ok"] = true,
             ["data"] = action["type"]!.GetValue<string>() == "observe"
                 ? new JsonObject { ["available"] = ui, ["windowHandle"] = handle, ["text"] = text }
                 : null
@@ -111,6 +111,86 @@ public sealed class ComputerObservationTests
         Assert.Equal(1, Images(await session.ObserveAsync(new JsonObject(), null, default)));
         Assert.Null(handler.Requests.Last()["since"]);
         Assert.Equal(1, Images(await session.ObserveAsync(new JsonObject { ["image"] = "always" }, null, default)));
+    }
+
+    [Fact]
+    public async Task ScopedObservationForwardsTheRootAndKeepsNewTargetRefsEvenWhenTextIsUnchanged()
+    {
+        var target = "r-" + new string('a', 32);
+        var handler = new Handler(body =>
+        {
+            var result = Batch(body);
+            if (body["actions"]![0]!["rootRef"] is not null)
+            {
+                result["results"]![0]!["data"]!["targets"] = new JsonArray(new JsonObject { ["ref"] = target });
+            }
+            return result;
+        });
+        using var client = Client(handler);
+        var session = new ComputerObservationSession(client, "agent");
+        await session.ObserveAsync(new JsonObject(), null, default);
+        var result = await session.ObserveAsync(new JsonObject
+        {
+            ["rootRef"] = target, ["interactiveOnly"] = true, ["maxDepth"] = 2
+        }, null, default);
+
+        var observation = handler.Requests[1]["actions"]![0]!;
+        Assert.Equal(target, observation["rootRef"]!.GetValue<string>());
+        Assert.True(observation["interactiveOnly"]!.GetValue<bool>());
+        Assert.Equal(2, observation["maxDepth"]!.GetValue<int>());
+        Assert.Equal(target, Metadata(result)["ui"]!["targets"]![0]!["ref"]!.GetValue<string>());
+        Assert.Equal(0, Images(result));
+    }
+
+    [Fact]
+    public async Task FailedFollowUpImageKeepsTheIndexedInputAndWaitOutcomes()
+    {
+        var handler = new Handler(body =>
+        {
+            var actions = body["actions"]!.AsArray();
+            if (actions.Count == 0) throw new HttpRequestException("image unavailable");
+            if (actions.Count == 1) return Batch(body);
+            return JsonNode.Parse("""
+                {"ok":false,"failedIndex":1,"errorCode":"wait_timeout","results":[
+                  {"index":0,"action":"invoke","ok":true,"disposition":{"delivery":"delivered_unverified","retry":"observe"}},
+                  {"index":1,"action":"wait_for","ok":false,"errorCode":"wait_timeout","data":{"matched":false}}
+                ]}
+                """)!.AsObject();
+        });
+        using var client = Client(handler);
+        var session = new ComputerObservationSession(client, "agent");
+        await session.ObserveAsync(new JsonObject(), null, default);
+        var actions = JsonNode.Parse("""
+            [{"type":"invoke","ref":"r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},{"type":"wait_for","windowTitle":"Save As"}]
+            """)!.AsArray();
+        var metadata = Metadata(await session.ObserveAsync(new JsonObject(), actions, default));
+        Assert.Equal(1, metadata["completed"]!.GetValue<int>());
+        Assert.Equal("wait_timeout", metadata["errorCode"]!.GetValue<string>());
+        Assert.Equal("delivered_unverified", metadata["actionResults"]![0]!["disposition"]!["delivery"]!.GetValue<string>());
+        Assert.False(metadata["actionResults"]![1]!["data"]!["matched"]!.GetValue<bool>());
+        Assert.NotNull(metadata["screenshotError"]);
+        Assert.Equal(3, handler.Requests.Count);
+        Assert.Empty(handler.Requests[^1]["actions"]!.AsArray());
+    }
+
+    [Fact]
+    public async Task FailedImplicitObservationIsReportedSeparatelyFromSuccessfulInput()
+    {
+        var handler = new Handler(body => body["actions"]!.AsArray().Count == 1 ? Batch(body) : JsonNode.Parse("""
+            {"ok":false,"failedIndex":1,"errorCode":"stale_ref","error":"observe again","results":[
+              {"index":0,"action":"invoke","ok":true,"disposition":{"delivery":"delivered_unverified","retry":"observe"}},
+              {"index":1,"action":"observe","ok":false,"errorCode":"stale_ref"}
+            ]}
+            """)!.AsObject());
+        using var client = Client(handler);
+        var session = new ComputerObservationSession(client, "agent");
+        await session.ObserveAsync(new JsonObject(), null, default);
+        var actions = JsonNode.Parse("""[{"type":"invoke","ref":"r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]""")!.AsArray();
+        var metadata = Metadata(await session.ObserveAsync(new JsonObject { ["rootRef"] = "r-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }, actions, default));
+        Assert.True(metadata["ok"]!.GetValue<bool>());
+        Assert.Equal(1, metadata["completed"]!.GetValue<int>());
+        Assert.Null(metadata["failedIndex"]);
+        Assert.Equal("stale_ref", metadata["observationError"]!["errorCode"]!.GetValue<string>());
     }
 
     [Fact]
