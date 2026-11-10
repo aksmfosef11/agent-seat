@@ -1,4 +1,12 @@
-# 0.9.3 preview validation
+# Preview validation
+
+## 0.10.0
+
+- 272 managed tests, 12 web UI tests, 12 installer bootstrap groups and 11 recovery groups passed. The installer groups ran under Windows PowerShell 5.1.
+- Nine live checks passed through the CLI and MCP against a temporary service and the release helper in an isolated Windows 11 RDP seat. They covered button invocation, Korean text and clearing, delayed UI and dialog waits, timeout after a completed action, scoped observation, duplicate targets, and refs from closed windows.
+- This is a Windows x64 preview. Fresh-machine installation and reboot/re-login for this release remain unverified. The installer reuses the service and CLI binaries of an existing installation.
+
+## 0.9.3 preview validation
 
 Validation date: 2026-10-12. This is an experimental preview, not a stable release.
 
@@ -6,7 +14,7 @@ Validation date: 2026-10-12. This is an experimental preview, not a stable relea
 
 The service, seat protocol and trilingual web interface are unchanged since 0.9.2. The installer scripts changed as described; the release has no service/CLI updater, so an existing installation keeps its binaries.
 
-## Completed
+### Completed
 
 - Managed tests: 227 Core and 36 Windows tests passed (`dotnet test AgentSeat.sln -c Release`).
 - Web interface: 12 tests passed (`npm test`).
@@ -16,7 +24,7 @@ The service, seat protocol and trilingual web interface are unchanged since 0.9.
 - On that seat, `computer status` reported an available session and `computer begin` returned a 1280×800 image of the seat's own desktop. The AI installation guide's administrator check, package download, plan and seat verification commands were run (the plan with this PC's account name). Its install step was not repeated on that PC.
 - Self-contained Windows x64 applications are built with .NET 8.0.31. Release packaging includes TermWrap provenance, original dependency licenses, a file manifest and a ZIP checksum, and rejects private configuration and gaming binaries.
 
-## Pending and known limits
+### Pending and known limits
 
 The 0.9.3 release package itself has not yet been used for a fresh installation that creates the account and waits for its first session in one run. The fixed session wait was exercised live while resuming an interrupted setup, and the fresh path is covered by simulation only.
 
